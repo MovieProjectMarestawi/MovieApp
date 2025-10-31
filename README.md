@@ -146,3 +146,9 @@ Installation & Running
     npm install
     npm start
     ```
+
+---
+
+UI Plan: https://stitch.withgoogle.com/projects/5959244375673120853
+
+DataModel: https://drive.google.com/file/d/1bSeaG59YCrL8optfts97AZ1po0do8vY4/view?usp=sharing
