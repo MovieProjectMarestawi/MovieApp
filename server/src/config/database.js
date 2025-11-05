@@ -25,6 +25,10 @@ export const connectDB = async () => {
     client.release();
   } catch (error) {
     console.error('❌ Database connection error:', error.message);
+    // In test environment, don't exit process
+    if (process.env.NODE_ENV === 'test') {
+      throw error;
+    }
     process.exit(1);
   }
 };
