@@ -1,7 +1,6 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { deleteAccount, getProfile } from '../controllers/users.controller.js';
-import { addFavorite, getFavorites, removeFavorite } from '../controllers/favorites.controller.js';
 
 const router = express.Router();
 
@@ -21,29 +20,6 @@ router.get('/me', getProfile);
  * @access  Private
  */
 router.delete('/me', deleteAccount);
-
-/**
- * @route   POST /api/users/me/favorites
- * @desc    Add movie to favorites (requires authentication)
- * @access  Private
- * @body    { movie_id: number }
- */
-router.post('/me/favorites', addFavorite);
-
-/**
- * @route   GET /api/users/me/favorites
- * @desc    Get user's favorite movies (requires authentication)
- * @access  Private
- */
-router.get('/me/favorites', getFavorites);
-
-/**
- * @route   DELETE /api/users/me/favorites/:movieId
- * @desc    Remove movie from favorites (requires authentication)
- * @access  Private
- * @params  { movieId: number } - TMDb movie ID
- */
-router.delete('/me/favorites/:movieId', removeFavorite);
 
 export default router;
 
