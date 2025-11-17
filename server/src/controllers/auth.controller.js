@@ -21,7 +21,6 @@ export const register = async (req, res, next) => {
       });
     }
 
-    // Validate email format
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
       return res.status(400).json({
@@ -30,7 +29,6 @@ export const register = async (req, res, next) => {
       });
     }
 
-    // Validate password rules
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
       return res.status(400).json({
@@ -39,7 +37,6 @@ export const register = async (req, res, next) => {
       });
     }
 
-    // Check if user already exists
     const existingUser = await query(
       'SELECT id FROM users WHERE email = $1',
       [email.toLowerCase().trim()]
@@ -52,10 +49,8 @@ export const register = async (req, res, next) => {
       });
     }
 
-    // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Create user
     const result = await query(
       'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, created_at',
       [email.toLowerCase().trim(), passwordHash]
@@ -63,7 +58,6 @@ export const register = async (req, res, next) => {
 
     const user = result.rows[0];
 
-    // Generate JWT token
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -95,7 +89,6 @@ export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Validate required fields
     const requiredValidation = validateRequiredFields(req.body, ['email', 'password']);
     if (!requiredValidation.valid) {
       return res.status(400).json({
@@ -104,7 +97,6 @@ export const login = async (req, res, next) => {
       });
     }
 
-    // Find user by email
     const result = await query(
       'SELECT id, email, password_hash FROM users WHERE email = $1',
       [email.toLowerCase().trim()]
@@ -119,7 +111,6 @@ export const login = async (req, res, next) => {
 
     const user = result.rows[0];
 
-    // Verify password
     const isPasswordValid = await comparePassword(password, user.password_hash);
 
     if (!isPasswordValid) {
@@ -129,7 +120,6 @@ export const login = async (req, res, next) => {
       });
     }
 
-    // Generate JWT token
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -159,8 +149,7 @@ export const login = async (req, res, next) => {
  * token blacklisting if needed.
  */
 export const logout = async (req, res) => {
-  // JWT is stateless, so logout is handled client-side
-  // In the future, we could implement token blacklisting here
+
   res.json({
     success: true,
     message: 'Logout successful. Please remove the token from client storage.',
