@@ -1,0 +1,39 @@
+# Dependencies
+node_modules
+npm-debug.log*
+.npm
+
+# Environment files (handled by Vercel)
+.env
+.env.*
+!.env.example
+
+# Development files
+*.log
+.DS_Store
+
+# Server dev files
+server/node_modules
+
+# Client dev files
+client/node_modules
+
+# Test files
+coverage
+*.test.js
+__tests__
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Design files
+movie4you-design-pictures
+movie4you-page-design-codes
+*.pdf
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore

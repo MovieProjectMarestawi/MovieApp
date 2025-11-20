@@ -1,0 +1,100 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: movieapp-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-moviehub}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-moviehub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - movieapp-network
+    restart: unless-stopped
+
+  # Backend API Server
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: movieapp-backend
+    environment:
+      PORT: ${PORT:-5001}
+      NODE_ENV: ${NODE_ENV:-production}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-moviehub}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASS: ${DB_PASS:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      TMDB_API_KEY: ${TMDB_API_KEY}
+      TMDB_BASE_URL: ${TMDB_BASE_URL:-https://api.themoviedb.org/3}
+    ports:
+      - "${PORT:-5001}:5001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./server/database/schema.sql:/app/database/schema.sql:ro
+    networks:
+      - movieapp-network
+    restart: unless-stopped
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:5001/api
+    container_name: movieapp-frontend
+    environment:
+      - VITE_API_URL=http://localhost:5001/api
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - movieapp-network
+    restart: unless-stopped
+
+  # pgAdmin - Database Management Tool
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: movieapp-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@movieapp.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      - postgres
+    networks:
+      - movieapp-network
+    restart: unless-stopped
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  movieapp-network:
+    driver: bridge
+

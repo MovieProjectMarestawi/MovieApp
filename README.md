@@ -1,327 +1,134 @@
-# Project: The Movie Hub (OAMK Web Application Project)
+# Movie4you - Full Stack Movie Application
+
+A modern full-stack movie application built with React, Node.js, and PostgreSQL.
 
-A full-stack, responsive web application for movie enthusiasts, built for the OAMK Web Application Project course (Autumn 2025). This application features user authentication, movie browsing (via TMDb API), reviews, and social groups.
+Quick Start
 
----
+Prerequisites
+- Docker & Docker Compose (recommended)
+- OR Node.js 20+ and PostgreSQL (manual setup)
+
+Docker Setup (Recommended)
 
-## 🚀 Technology Stack
+Works on all platforms: macOS, Windows, Linux
+No need to install Node.js, PostgreSQL, or any dependencies manually
+Everything runs in isolated containers
 
-* **Frontend:** React
-* **Backend:** Node.js (with Express.js)
-* **Database:** PostgreSQL
-* **External API:** The Movie Database (TMDb)
-* **API Testing:** Jest & Supertest
-* **Authentication:** JSON Web Tokens (JWT)
+1. Clone the repository
+   git clone <repository-url>
+   cd movieapp
 
----
+2. Create environment file
+   cp .env.example .env
 
-## ✨ Core Features
+3. Edit .env file
+   - Add your TMDb API key: TMDB_API_KEY=your-api-key-here
+   - Get API key from: https://www.themoviedb.org/
 
-* **(Req 1)** Fully Responsive UI for all devices.
-* **(Req 2-4)** Complete User Management: Register, Login, Logout, and Delete Account.
-* **(Req 5-6)** Movie Browsing: Advanced search (3+ criteria) and "Now Playing in Finland" list.
-* **(Req 7-10)** Social Groups: Create, join (with approval), manage, and customize groups.
-* **(Req 11-12)** Movie Reviews: Logged-in users can write reviews (text + stars), which are visible to all.
-* **(Req 13-14)** Favorite Lists: Users can create private favorite lists and share them via a public URL.
-* **(Req 15)** Custom Feature: [To Be Defined]
-* **(Req 16)** Full deployment to a public URL.
+4. Start the application
+   docker-compose up -d
 
----
+5. Access the application
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:5001/api
+   - Database: localhost:5432
+   - pgAdmin (Database GUI): http://localhost:5050
+     - Email: admin@movieapp.com (default)
+     - Password: admin (default)
 
-## 📊 Project Status
+Useful Docker Commands
 
-### ✅ Completed Phases
+Container status
+   docker-compose ps
 
-- **Phase 1: Foundation & User Authentication** ✅
-  - User registration, login, logout, and account deletion
-  - JWT authentication
-  - Complete test coverage
+View logs
+   docker-compose logs -f
 
-- **Phase 2: Core Movie Functionality (TMDb Integration)** ✅
-  - Movie search with multiple criteria (query, genre, year)
-  - Now playing movies in Finland
-  - Movie details and genres
-  - Complete test coverage
+View logs for specific service
+   docker-compose logs -f backend
+   docker-compose logs -f frontend
+   docker-compose logs -f postgres
+   docker-compose logs -f pgadmin
 
-- **Phase 3: User Interaction (Reviews & Favorites)** ✅
-  - Movie reviews (create, read, update, delete)
-  - User favorites management
-  - Shareable favorites lists
-  - Complete test coverage
+Stop containers
+   docker-compose down
 
-- **Phase 4: Social Features (Groups)** ✅
-  - Group creation and management
-  - Join requests with approval system
-  - Group membership management
-  - Group content (movies) management
-  - Complete test coverage
+Stop containers and remove volumes
+   docker-compose down -v
 
-### 🚧 In Progress
+Restart containers
+   docker-compose restart
 
-- **Phase 5: Finalization & Deployment**
-  - Frontend development
-  - Custom feature implementation
-  - Full responsiveness
-  - Deployment
+Rebuild and restart
+   docker-compose up -d --build
 
----
+Accessing Database
 
-## 📚 Documentation
+Option 1: pgAdmin (Web Interface - Recommended)
+   1. Open http://localhost:5050
+   2. Login with:
+      - Email: admin@movieapp.com
+      - Password: admin
+   3. Add new server:
+      - Name: MovieApp DB
+      - Host: postgres (container name)
+      - Port: 5432
+      - Database: moviehub (or your DB_NAME)
+      - Username: postgres (or your DB_USER)
+      - Password: postgres (or your DB_PASS)
 
-### For Frontend Developers
+Option 2: Command Line (psql)
+   docker exec -it movieapp-db psql -U postgres -d moviehub
 
-* **[BACKEND_API.md](./BACKEND_API.md)** - Complete backend API documentation with code examples, request/response formats, and integration guides.
+Manual Setup
 
-### For Backend Developers
+1. Database Setup
+   psql -U postgres
+   CREATE DATABASE moviehub;
+   \q
+   psql -U postgres -d moviehub -f server/database/schema.sql
 
-* **[docs/DATABASE_MODEL.md](./docs/DATABASE_MODEL.md)** - Database schema and relationships
-* **[docs/DATABASE_README.md](./docs/DATABASE_README.md)** - Database setup instructions
-* **[docs/PGADMIN_SETUP.md](./docs/PGADMIN_SETUP.md)** - pgAdmin 4 setup guide
+2. Backend Setup
+   cd server
+   cp .env.example .env
+   Edit .env with your database credentials and TMDb API key
+   npm install
+   npm run dev
 
-### Project Documentation
+3. Frontend Setup
+   cd client
+   cp .env.example .env
+   npm install
+   npm run dev
 
-* **UI Plan:** https://stitch.withgoogle.com/projects/5959244375673120853
-* **Data Model:** https://drive.google.com/file/d/1bSeaG59YCrL8optfts97AZ1po0do8vY4/view?usp=sharing
+Project Structure
 
----
+movieapp/
+├── client/          React + TypeScript Frontend
+├── server/          Express.js Backend
+├── docs/           Documentation
+└── docker-compose.yml
 
-## 🛠️ Getting Started
+Environment Variables
 
-### Prerequisites
+- Root .env: Used by Docker Compose
+- server/.env: Backend configuration (manual setup)
+- client/.env: Frontend configuration (manual setup)
 
-* Node.js (v18 or later)
-* PostgreSQL
-* A TMDb API Key. Get one from [developer.themoviedb.org](https://developer.themoviedb.org/reference/intro/getting-started)
+Documentation
 
-### Installation & Running
+- Project Status: PROJECT_STATUS.md - Feature list and completion status
+- Backend API: docs/BACKEND_API.md - API documentation
+- Database Model: docs/DATABASE_MODEL.md - Database schema
 
-#### 1. Clone the repository:
-```bash
-git clone [your-repo-url]
-cd movie-projektti
-```
-
-#### 2. Backend Setup:
-```bash
-cd server
-npm install
-
-# Create a .env file (copy from .env.example)
-cp .env.example .env
-
-# Edit .env file and add:
-# - DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT
-# - JWT_SECRET
-# - TMDB_API_KEY
-
-# Run database migrations
-# See docs/DATABASE_README.md for setup instructions
-
-# Start development server
-npm run dev
-```
-
-The backend will run on `http://localhost:5000`
-
-#### 3. Frontend Setup:
-```bash
-cd client
-npm install
-
-# Create a .env file
-# REACT_APP_API_URL=http://localhost:5000/api
-
-# Start development server
-npm start
-```
-
-The frontend will run on `http://localhost:3000`
-
----
-
-## 🧪 Testing
-
-### Backend Tests
-
-```bash
-cd server
-npm test
-```
-
-**Test Coverage:**
-- ✅ 7 test suites
-- ✅ 115 tests
-- ✅ All tests passing
-
----
-
-## 📡 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `POST /api/auth/logout` - Logout user
-
-### Users
-- `GET /api/users/me` - Get user profile
-- `DELETE /api/users/me` - Delete account
-
-### Movies
-- `GET /api/movies/search` - Search movies (query, genre, year)
-- `GET /api/movies/now-playing` - Get now playing movies
-- `GET /api/movies/:id` - Get movie details
-- `GET /api/movies/genres` - Get movie genres
-- `GET /api/movies/:id/reviews` - Get movie reviews
-
-### Reviews
-- `POST /api/reviews` - Create review
-- `GET /api/reviews` - Get all reviews
-- `PUT /api/reviews/:id` - Update review
-- `DELETE /api/reviews/:id` - Delete review
-
-### Favorites
-- `POST /api/users/me/favorites` - Add to favorites
-- `GET /api/users/me/favorites` - Get favorites
-- `DELETE /api/users/me/favorites/:movieId` - Remove from favorites
-- `GET /api/favorites/share/:userId` - Get shareable favorites
-
-### Groups
-- `POST /api/groups` - Create group
-- `GET /api/groups` - List all groups
-- `GET /api/groups/:id` - Get group details
-- `DELETE /api/groups/:id` - Delete group
-- `POST /api/groups/:id/join` - Request to join group
-- `GET /api/groups/:id/requests` - Get join requests (owner only)
-- `POST /api/groups/:id/requests/:requestId/approve` - Approve join request
-- `POST /api/groups/:id/requests/:requestId/reject` - Reject join request
-- `DELETE /api/groups/:id/members/:userId` - Remove member (owner only)
-- `DELETE /api/groups/:id/leave` - Leave group
-- `POST /api/groups/:id/movies` - Add movie to group
-- `GET /api/groups/:id/movies` - Get group movies
-- `DELETE /api/groups/:id/movies/:movieId` - Remove movie from group
-
-**For detailed API documentation, see [BACKEND_API.md](./BACKEND_API.md)**
-
----
-
-## 🗂️ Project Structure
-
-```
-movie-projektti/
-├── client/                 # React frontend
-│   ├── src/
-│   └── package.json
-├── server/                 # Node.js backend
-│   ├── src/
-│   │   ├── controllers/    # Route controllers
-│   │   ├── routes/         # API routes
-│   │   ├── middleware/     # Express middleware
-│   │   ├── services/       # External services (TMDb)
-│   │   ├── utils/          # Utility functions
-│   │   ├── config/         # Configuration files
-│   │   └── __tests__/      # Test files
-│   ├── database/
-│   │   └── schema.sql      # Database schema
-│   └── package.json
-├── docs/                   # Documentation
-│   ├── DATABASE_MODEL.md
-│   ├── DATABASE_README.md
-│   └── PGADMIN_SETUP.md
-├── BACKEND_API.md          # Frontend developer guide
-└── README.md               # This file
-```
-
----
-
-## 🔐 Environment Variables
-
-### Backend (.env)
-```env
-PORT=5000
-NODE_ENV=development
-
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=moviehub
-DB_USER=postgres
-DB_PASS=postgres
-
-# JWT
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-JWT_EXPIRES_IN=7d
-
-# TMDb API
-TMDB_API_KEY=your-tmdb-api-key-here
-```
-
-### Frontend (.env)
-```env
-REACT_APP_API_URL=http://localhost:5000/api
-```
-
----
-
-## 📝 Development Plan
-
-### Phase 1: Foundation & User Authentication ✅
-- Project setup and infrastructure
-- User registration, login, logout, account deletion
-- JWT authentication
-- Database schema (Users table)
-- Unit tests
-
-### Phase 2: Core Movie Functionality ✅
-- TMDb API integration
-- Movie search (query, genre, year)
-- Now playing movies
-- Movie details and genres
-- Unit tests
-
-### Phase 3: User Interaction ✅
-- Movie reviews (CRUD operations)
-- User favorites management
-- Shareable favorites lists
-- Database schema updates
-- Unit tests
-
-### Phase 4: Social Features ✅
-- Group creation and management
-- Join request system with approval
-- Membership management
-- Group content (movies)
-- Database schema (Groups, Members, Requests, Content)
-- Unit tests
-
-### Phase 5: Finalization & Deployment 🚧
-- Frontend development
-- Custom feature implementation
-- Full responsiveness testing
-- Deployment (Database, Backend, Frontend)
-- Final documentation
-
----
-
-## 🤝 Contributing
-
-This is a course project. For questions or issues, please contact the project team.
-
----
-
-## 📄 License
-
-This project is part of the OAMK Web Application Project course.
-
----
-
-## 🔗 Links
-
-* **UI Plan:** https://stitch.withgoogle.com/projects/5959244375673120853
-* **Data Model:** https://drive.google.com/file/d/1bSeaG59YCrL8optfts97AZ1po0do8vY4/view?usp=sharing
-* **TMDb API:** https://developer.themoviedb.org/
-
----
-
-**Last Updated:** 2025-01-17
-**Backend Status:** ✅ Complete (All 4 phases implemented and tested)
-**Frontend Status:** 🚧 In Progress
+Tech Stack
+
+- Frontend: React, TypeScript, Vite, Tailwind CSS
+- Backend: Node.js, Express.js
+- Database: PostgreSQL
+- External API: TMDb (The Movie Database)
+
+License
+
+ISC
+# movieapp-full

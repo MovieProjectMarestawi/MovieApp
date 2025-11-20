@@ -1,39 +1,26 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-.pnpm-debug.log*
-
 # Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env*.local
+
+# Dependencies
+node_modules/
+*/node_modules/
 
 # Build outputs
-dist/
 build/
-*.tsbuildinfo
-.next/
-out/
-.nuxt/
-.cache/
-.parcel-cache/
+dist/
+*/build/
+*/dist/
 
-# IDE and Editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-*.sublime-project
-*.sublime-workspace
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
 # OS files
 .DS_Store
@@ -43,147 +30,28 @@ out/
 .Trashes
 ehthumbs.db
 Thumbs.db
-Desktop.ini
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # Testing
 coverage/
 .nyc_output/
-*.lcov
-.jest/
-
-# Temporary files
-*.tmp
-*.temp
-.cache/
-.temp/
-
-# Database
-*.sqlite
-*.sqlite3
-*.db
-database.sql
-migrations/*.sql
+*.test.js.snap
 
 # Docker
 docker-compose.override.yml
-.dockerignore
 
-# Backup files
-*.bak
-*.backup
-*.old
+# Database
+*.sql.backup
+*.db
+*.sqlite
 
-# Package manager locks (optional - uncomment if you want to ignore)
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
-
-# React build files
-/client/build/
-/client/dist/
-/server/build/
-/server/dist/
-
-# TypeScript
-*.tsbuildinfo
-tsconfig.tsbuildinfo
-
-# ESLint cache
-.eslintcache
-.stylelintcache
-
-# Optional npm cache directory
-.npm
-
-# Optional REPL history
-.node_repl_history
-
-# Optional stylelint cache
-.stylelintcache
-
-# Microbundle cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variable files
-.env
-.env.test
-.env.production
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# yarn v2
-.yarn/cache
-.yarn/unplugged
-.yarn/build-state.yml
-.yarn/install-state.gz
-.pnp.*
-
-# Local Netlify folder
-.netlify
-
-# Vercel
-.vercel
-
-# Serverless directories
-.serverless/
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
-
-# TernJS port file
-.tern-port
-
-# Coverage directory used by tools like istanbul
-coverage
-*.lcov
-
-# IDEs and editors
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-*.code-workspace
-
-# OS-specific
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-Desktop.ini
-
-
-movie4you-logo.png
-STITCH_PROMPT.md
-.cursorrules
+# Temporary files
+tmp/
+temp/
+*.tmp
