@@ -6,58 +6,28 @@ import { addFavorite, getFavorites, removeFavorite } from '../controllers/favori
 
 const router = express.Router();
 
-// All routes require authentication
+// Kaikki tämän tiedoston reitit vaativat kirjautumisen
 router.use(authenticateToken);
 
-/**
- * @route   GET /api/users/me
- * @desc    Get current user profile
- * @access  Private
- */
+// Hae kirjautuneen käyttäjän profiili
 router.get('/me', getProfile);
 
-/**
- * @route   PUT /api/users/me
- * @desc    Update current user profile (email)
- * @access  Private
- */
+// Päivitä kirjautuneen käyttäjän tiedot (esim. email)
 router.put('/me', updateProfile);
 
-/**
- * @route   PUT /api/users/me/password
- * @desc    Change current user password
- * @access  Private
- */
+// Vaihda käyttäjän salasana
 router.put('/me/password', changePassword);
 
-/**
- * @route   DELETE /api/users/me
- * @desc    Delete current user account (cascades to all related data)
- * @access  Private
- */
+// Poista käyttäjätili kokonaan poistaa myös siihen liittyvät datat
 router.delete('/me', deleteAccount);
 
-/**
- * @route   POST /api/users/me/favorites
- * @desc    Add movie to favorites (requires authentication)
- * @access  Private
- * @body    { movie_id: number }
- */
+// Lisää elokuva suosikkeihin
 router.post('/me/favorites', addFavorite);
 
-/**
- * @route   GET /api/users/me/favorites
- * @desc    Get user's favorite movies (requires authentication)
- * @access  Private
- */
+// Hae käyttäjän suosikkielokuvat
 router.get('/me/favorites', getFavorites);
 
-/**
- * @route   DELETE /api/users/me/favorites/:movieId
- * @desc    Remove movie from favorites (requires authentication)
- * @access  Private
- * @params  { movieId: number } - TMDb movie ID
- */
+// Poista elokuva suosikeista
 router.delete('/me/favorites/:movieId', removeFavorite);
 
 export default router;
