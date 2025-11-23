@@ -55,3 +55,10 @@ docker-compose.override.yml
 tmp/
 temp/
 *.tmp
+
+# Documentation files (Markdown)
+*.md
+
+# Updated files (temporary)
+*.updated
+*/*.updated
