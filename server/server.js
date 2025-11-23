@@ -1,6 +1,6 @@
+import 'dotenv/config'; // Must be the first import to load env vars before other imports
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { connectDB } from './src/config/database.js';
 import authRoutes from './src/routes/auth.routes.js';
 import usersRoutes from './src/routes/users.routes.js';
@@ -12,8 +12,6 @@ import reviewsRoutes from './src/routes/reviews.routes.js';
 import shareRoutes from './src/routes/share.routes.js';
 import groupsRoutes from './src/routes/groups.routes.js';
 import { errorHandler, notFoundHandler } from './src/middleware/error.middleware.js';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
