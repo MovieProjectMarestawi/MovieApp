@@ -1,5 +1,5 @@
 # Environment variables
-.env
+# .env - Removed to allow .env files to be committed to GitHub
 .env.local
 .env.development.local
 .env.test.local
