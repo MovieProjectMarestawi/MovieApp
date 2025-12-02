@@ -10,6 +10,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { MovieSearchPage } from "./pages/MovieSearchPage";
 import { Toaster } from "./components/ui/sonner";
+import { Footer } from "./components/Footer";
+
 
 // Layout component for routes with navbar
 function LayoutWithNavbar() {
@@ -20,8 +22,10 @@ function LayoutWithNavbar() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/search" element={<MovieSearchPage />} />
+          
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 }

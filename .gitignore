@@ -57,7 +57,7 @@ temp/
 *.tmp
 
 # Documentation files (Markdown)
-*.md
+# *.md - Removed to allow .md files (documentation) to be committed to GitHub
 
 # Updated files (temporary)
 *.updated
