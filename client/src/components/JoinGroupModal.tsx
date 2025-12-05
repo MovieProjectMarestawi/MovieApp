@@ -18,17 +18,17 @@ interface JoinGroupModalProps {
   onClose: () => void;
   onConfirm: (message: string) => void;
 }
-
+// käytjä pystty viesti omistajalle
 export function JoinGroupModal({ group, open, onClose, onConfirm }: JoinGroupModalProps) {
   const [message, setMessage] = useState('');
-
+// Lähettää viestin parent-komponentille ja tyhjentää kentän
   const handleConfirm = () => {
     onConfirm(message);
     setMessage('');
   };
-
+// Jos group = null, modal ei piirretä lainkaan
   if (!group) return null;
-
+ 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-md">
@@ -38,8 +38,9 @@ export function JoinGroupModal({ group, open, onClose, onConfirm }: JoinGroupMod
             Send a request to join this group. The group owner will review your request.
           </DialogDescription>
         </DialogHeader>
-
         <div className="space-y-4 py-4">
+          
+        {/* Viesti ryhmän omistajalle */}
           <div className="space-y-2">
             <Label htmlFor="message" className="text-zinc-300">
               Message to group owner (optional)
@@ -52,7 +53,7 @@ export function JoinGroupModal({ group, open, onClose, onConfirm }: JoinGroupMod
               className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 min-h-[100px]"
             />
           </div>
-
+          {/* Ryhmän perustiedot */}
           <div className="bg-zinc-800 p-4 rounded-lg">
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-zinc-400">Group Owner:</span>
@@ -64,7 +65,7 @@ export function JoinGroupModal({ group, open, onClose, onConfirm }: JoinGroupMod
             </div>
           </div>
         </div>
-
+         {/* nappit: cancel ja sed request */}
         <DialogFooter>
           <Button
             variant="outline"

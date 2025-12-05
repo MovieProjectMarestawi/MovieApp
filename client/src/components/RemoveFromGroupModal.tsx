@@ -40,12 +40,12 @@ export function RemoveFromGroupModal({
 
   const handleRemoveFromGroup = async (groupId: number) => {
     try {
-      setRemoving(groupId);
-      await groupsAPI.removeMovie(groupId, movieId);
+      setRemoving(groupId); // näytetään removing nappi
+      await groupsAPI.removeMovie(groupId, movieId); //API kustus poissa movies groupista
       toast.success(`Removed "${movieTitle}" from group`);
-      onClose();
-      // Optionally navigate to the group
-      navigate(`/groups/${groupId}`);
+      onClose(); // sulkee modaalin
+      
+      navigate(`/groups/${groupId}`); 
     } catch (error: any) {
       console.error('Failed to remove movie from group:', error);
       toast.error(error.message || 'Failed to remove movie from group');

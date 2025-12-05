@@ -4,6 +4,8 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
+
+// Modal-komponentti
 import {
   Dialog,
   DialogContent,
@@ -11,21 +13,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+// ilmoitus sinne onnistumine tai virheestä
 import { toast } from 'sonner';
+// api kustus group luomiseen
 import { groupsAPI } from '../services/api';
 
 interface CreateGroupModalProps {
-  open: boolean;
-  onClose: () => void;
-  onSuccess?: () => void;
+  open: boolean;  // kertoo onko model auki
+  onClose: () => void;  // sulkefunktio
+  onSuccess?: () => void; // call group liuonnin jälken
 }
-
+  // Lomakkeen kenttien tilat
 export function CreateGroupModal({ open, onClose, onSuccess }: CreateGroupModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+    // Lomakkeen lähetys
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -42,6 +47,7 @@ export function CreateGroupModal({ open, onClose, onSuccess }: CreateGroupModalP
 
     setLoading(true);
     try {
+     // API kutsu uuden ryhmän luomiseen
       await groupsAPI.create(name.trim(), description.trim() || undefined);
       toast.success('Group created successfully!');
       setName('');
@@ -55,7 +61,7 @@ export function CreateGroupModal({ open, onClose, onSuccess }: CreateGroupModalP
       setLoading(false);
     }
   };
-
+  // Modal sulkeminen ja lomakkeen resetointi
   const handleClose = () => {
     if (!loading) {
       setName('');
@@ -76,12 +82,13 @@ export function CreateGroupModal({ open, onClose, onSuccess }: CreateGroupModalP
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          {/* Virheilmoitus */}
           {error && (
             <div className="p-3 bg-red-950/50 border border-red-800 rounded-lg">
               <p className="text-red-400 text-sm">{error}</p>
             </div>
           )}
-
+          {/* Nimi-kenttä */}
           <div className="space-y-2">
             <Label htmlFor="group-name" className="text-zinc-300">
               Group Name *
@@ -101,7 +108,7 @@ export function CreateGroupModal({ open, onClose, onSuccess }: CreateGroupModalP
               disabled={loading}
             />
           </div>
-
+          
           <div className="space-y-2">
             <Label htmlFor="group-description" className="text-zinc-300">
               Description (Optional)
@@ -116,8 +123,9 @@ export function CreateGroupModal({ open, onClose, onSuccess }: CreateGroupModalP
               disabled={loading}
             />
           </div>
-
+           {/* Napit */}
           <div className="flex gap-3 pt-4">
+            {/* perutta Napit */}
             <Button
               type="button"
               variant="outline"
@@ -127,6 +135,7 @@ export function CreateGroupModal({ open, onClose, onSuccess }: CreateGroupModalP
             >
               Cancel
             </Button>
+            {/* lähetys */}
             <Button
               type="submit"
               disabled={loading}
