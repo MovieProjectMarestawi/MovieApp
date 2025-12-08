@@ -80,9 +80,9 @@ export function ProfilePage() {
 
         // Haetaan käyttäjän kirjoittamien arvostelujen määrä
         try {
-          const reviewsData = await reviewsAPI.getAll(undefined, 1, 1000);
-          const userReviews = reviewsData.reviews?.filter((r: any) => r.user_id === user.id) || [];
-          setReviewsCount(userReviews.length);
+          const reviewsData = await reviewsAPI.getAll(undefined, 1, 100, user.id);
+          const totalReviews = reviewsData.pagination?.total ?? reviewsData.reviews?.length ?? 0;
+          setReviewsCount(totalReviews);
         } catch (error) {
           console.error('Review count error');
         }

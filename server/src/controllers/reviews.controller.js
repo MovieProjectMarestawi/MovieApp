@@ -95,7 +95,7 @@ export const createReview = async (req, res, next) => {
  */
 export const getAllReviews = async (req, res, next) => {
   try {
-    const { movie_id, page = 1, limit = 20 } = req.query;
+    const { movie_id, user_id, page = 1, limit = 20 } = req.query;
 
     // Validate page
     const pageNum = parseInt(page);
@@ -106,7 +106,7 @@ export const getAllReviews = async (req, res, next) => {
       });
     }
 
-    // Validate limit
+    // Validate limit (capped to 100 to keep queries cheap)
     const limitNum = parseInt(limit);
     if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
       return res.status(400).json({
@@ -117,60 +117,49 @@ export const getAllReviews = async (req, res, next) => {
 
     const offset = (pageNum - 1) * limitNum;
 
-    let queryText;
-    let queryParams;
+    // Build dynamic filters
+    const filters = [];
+    const filterParams = [];
 
     if (movie_id) {
-      // Validate movie_id
       if (isNaN(movie_id) || parseInt(movie_id) < 1) {
         return res.status(400).json({
           success: false,
           message: 'Invalid movie_id. Must be a positive number.',
         });
       }
-
-      // Get reviews for specific movie
-      queryText = `
-        SELECT r.id, r.user_id, r.movie_id, r.rating, r.text, r.created_at, r.updated_at, u.email as user_email
-        FROM reviews r
-        JOIN users u ON r.user_id = u.id
-        WHERE r.movie_id = $1
-        ORDER BY r.created_at DESC
-        LIMIT $2 OFFSET $3
-      `;
-      queryParams = [parseInt(movie_id), limitNum, offset];
-
-      // Get total count
-      const countResult = await query(
-        'SELECT COUNT(*) FROM reviews WHERE movie_id = $1',
-        [parseInt(movie_id)]
-      );
-      const total = parseInt(countResult.rows[0].count);
-    } else {
-      // Get all reviews
-      queryText = `
-        SELECT r.id, r.user_id, r.movie_id, r.rating, r.text, r.created_at, r.updated_at, u.email as user_email
-        FROM reviews r
-        JOIN users u ON r.user_id = u.id
-        ORDER BY r.created_at DESC
-        LIMIT $1 OFFSET $2
-      `;
-      queryParams = [limitNum, offset];
-
-      // Get total count
-      const countResult = await query('SELECT COUNT(*) FROM reviews');
-      const total = parseInt(countResult.rows[0].count);
+      filters.push(`r.movie_id = $${filters.length + 1}`);
+      filterParams.push(parseInt(movie_id));
     }
 
-    const result = await query(queryText, queryParams);
-    const reviews = result.rows;
+    if (user_id) {
+      if (isNaN(user_id) || parseInt(user_id) < 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid user_id. Must be a positive number.',
+        });
+      }
+      filters.push(`r.user_id = $${filters.length + 1}`);
+      filterParams.push(parseInt(user_id));
+    }
 
-    // Get total count
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
+    const queryText = `
+      SELECT r.id, r.user_id, r.movie_id, r.rating, r.text, r.created_at, r.updated_at, u.email as user_email
+      FROM reviews r
+      JOIN users u ON r.user_id = u.id
+      ${whereClause}
+      ORDER BY r.created_at DESC
+      LIMIT $${filterParams.length + 1} OFFSET $${filterParams.length + 2}
+    `;
+
+    const reviewsResult = await query(queryText, [...filterParams, limitNum, offset]);
+    const reviews = reviewsResult.rows;
+
     const countResult = await query(
-      movie_id
-        ? 'SELECT COUNT(*) FROM reviews WHERE movie_id = $1'
-        : 'SELECT COUNT(*) FROM reviews',
-      movie_id ? [parseInt(movie_id)] : []
+      `SELECT COUNT(*) FROM reviews r ${whereClause}`,
+      filterParams
     );
     const total = parseInt(countResult.rows[0].count);
 

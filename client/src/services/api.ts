@@ -229,9 +229,10 @@ export const reviewsAPI = {
     return response.data.review;
   },
 
-  getAll: async (movieId?: number, page = 1, limit = 20) => {
+  getAll: async (movieId?: number, page = 1, limit = 20, userId?: number) => {
     const params = new URLSearchParams();
     if (movieId) params.append('movie_id', movieId.toString());
+    if (userId) params.append('user_id', userId.toString());
     params.append('page', page.toString());
     params.append('limit', limit.toString());
 
