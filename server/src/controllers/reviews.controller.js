@@ -91,7 +91,7 @@ export const createReview = async (req, res, next) => {
 /**
  * Get all reviews (public)
  * GET /api/reviews
- * Query params: movie_id (optional), page (optional), limit (optional)
+ * Query params: movie_id (optional), user_id (optional), page (optional), limit (optional)
  */
 export const getAllReviews = async (req, res, next) => {
   try {
@@ -106,7 +106,7 @@ export const getAllReviews = async (req, res, next) => {
       });
     }
 
-    // Validate limit (capped to 100 to keep queries cheap)
+    // Validate limit
     const limitNum = parseInt(limit);
     if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
       return res.status(400).json({
@@ -117,50 +117,62 @@ export const getAllReviews = async (req, res, next) => {
 
     const offset = (pageNum - 1) * limitNum;
 
-    // Build dynamic filters
-    const filters = [];
+    let queryText;
+    let queryParams;
+    let countQuery;
+    let countParams = [];
+
+    // Build WHERE conditions based on filters
+    const conditions = [];
     const filterParams = [];
+    let paramIndex = 1;
 
     if (movie_id) {
+      // Validate movie_id
       if (isNaN(movie_id) || parseInt(movie_id) < 1) {
         return res.status(400).json({
           success: false,
           message: 'Invalid movie_id. Must be a positive number.',
         });
       }
-      filters.push(`r.movie_id = $${filters.length + 1}`);
+      conditions.push(`r.movie_id = $${paramIndex++}`);
       filterParams.push(parseInt(movie_id));
     }
 
     if (user_id) {
+      // Validate user_id
       if (isNaN(user_id) || parseInt(user_id) < 1) {
         return res.status(400).json({
           success: false,
           message: 'Invalid user_id. Must be a positive number.',
         });
       }
-      filters.push(`r.user_id = $${filters.length + 1}`);
+      conditions.push(`r.user_id = $${paramIndex++}`);
       filterParams.push(parseInt(user_id));
     }
 
-    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const queryText = `
+    // Build main query
+    queryText = `
       SELECT r.id, r.user_id, r.movie_id, r.rating, r.text, r.created_at, r.updated_at, u.email as user_email
       FROM reviews r
       JOIN users u ON r.user_id = u.id
       ${whereClause}
       ORDER BY r.created_at DESC
-      LIMIT $${filterParams.length + 1} OFFSET $${filterParams.length + 2}
+      LIMIT $${paramIndex++} OFFSET $${paramIndex}
     `;
+    queryParams = [...filterParams, limitNum, offset];
 
-    const reviewsResult = await query(queryText, [...filterParams, limitNum, offset]);
-    const reviews = reviewsResult.rows;
+    // Build count query
+    countQuery = `SELECT COUNT(*) FROM reviews r ${whereClause}`;
+    countParams = filterParams;
 
-    const countResult = await query(
-      `SELECT COUNT(*) FROM reviews r ${whereClause}`,
-      filterParams
-    );
+    const result = await query(queryText, queryParams);
+    const reviews = result.rows;
+
+    // Get total count
+    const countResult = await query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].count);
 
     res.json({
