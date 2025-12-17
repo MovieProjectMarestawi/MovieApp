@@ -44,16 +44,19 @@ function LayoutWithNavbar() {
   );
 }
 
+import { ScrollToTop } from "./components/ScrollToTop";
+
 export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="dark min-h-screen bg-black">
+        <ScrollToTop />
+        <div className="dark min-h-screen bg-black flex flex-col">
           <Routes>
             {/* Routes without navbar */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            
+
             {/* Routes with navbar */}
             <Route path="/*" element={<LayoutWithNavbar />} />
           </Routes>
