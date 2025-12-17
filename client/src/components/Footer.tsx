@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Film, Github, Twitter, Mail } from 'lucide-react';
+import { Film } from 'lucide-react';
 
 export function Footer() {
   // heataan tämän vuoden vuosiluku automattisesti
@@ -11,7 +11,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* grit layout 1 sarake mobiilissa mut neljä saraketta isomassa näytössa*/}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          
+
           {/* logo sekä nimit */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
@@ -21,33 +21,11 @@ export function Footer() {
             </div>
             {/* Selitys about sivusto */}
             <p className="text-zinc-400 mb-4 max-w-md">
-              Your ultimate destination for discovering, discussing, and sharing your favorite movies. 
+              Your ultimate destination for discovering, discussing, and sharing your favorite movies.
               Connect with fellow cinephiles and explore the world of cinema together.
             </p>
             {/* some linkit  */}
-            <div className="flex gap-4">
-              <a
-                href="#"
-                className="text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
-                aria-label="GitHub"
-              >
-                <Github className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
-                aria-label="Email"
-              >
-                <Mail className="w-5 h-5" />
-              </a>
-            </div>
+
           </div>
 
           {/* Linkit missä vie sinne search sekä gropus ja favorites  */}
@@ -110,17 +88,7 @@ export function Footer() {
             <p className="text-zinc-500 text-sm">
               © {currentYear} Movie4you. All rights reserved.
             </p>
-            <div className="flex gap-6 text-sm">
-              <a href="#" className="text-zinc-500 hover:text-zinc-400 transition-colors cursor-pointer">
-                Privacy Policy
-              </a>
-              <a href="#" className="text-zinc-500 hover:text-zinc-400 transition-colors cursor-pointer">
-                Terms of Service
-              </a>
-              <a href="#" className="text-zinc-500 hover:text-zinc-400 transition-colors cursor-pointer">
-                About
-              </a>
-            </div>
+
           </div>
         </div>
       </div>
