@@ -1,40 +1,41 @@
-# Veritabanını Görüntüleme Rehberi
 
-Bu rehber, pgAdmin kullanarak veritabanını görüntüleme ve öğretmene gösterme adımlarını içerir.
+# Database Viewing Guide
 
-## pgAdmin'e Erişim
+This guide explains how to view the project database using pgAdmin and how to demonstrate it to an instructor.
 
-1. Tarayıcıda açın: http://localhost:5050
-2. Giriş yapın:
+## Accessing pgAdmin
+
+1. Open in your browser: http://localhost:5050
+2. Sign in:
    - Email: admin@movieapp.com
    - Password: admin
 
-## Veritabanına Bağlanma
+## Connecting to the Database
 
-### İlk Kez Bağlanma
+### First-time Connection
 
-1. pgAdmin açıldığında sol panelde "Servers" görünecek
-2. "Servers" üzerine sağ tıklayın > "Register" > "Server..."
-3. **General Tab:**
-   - Name: `MovieApp DB`
-4. **Connection Tab:**
-   - Host name/address: `postgres` (önemli: localhost değil!)
-   - Port: `5432`
-   - Maintenance database: `moviehub`
-   - Username: `postgres`
-   - Password: `.env` dosyasındaki `DB_PASS` değeri (varsayılan: `465546`)
-5. "Save" butonuna tıklayın
+1. After pgAdmin opens, you will see "Servers" in the left panel.
+2. Right-click "Servers" > "Register" > "Server..."
+3. **General tab:**
+   - Name: MovieApp DB
+4. **Connection tab:**
+   - Host name/address: postgres (important: not localhost)
+   - Port: 5432
+   - Maintenance database: moviehub
+   - Username: postgres
+   - Password: the `DB_PASS` value from the `.env` file (default: 465546)
+5. Click the "Save" button.
 
-### Sonraki Kullanımlar
+### Subsequent Connections
 
-- Sol panelde "MovieApp DB" server'ına tıklayın
-- Şifre sorarsa: `.env` dosyasındaki `DB_PASS` değerini girin
+- Click the "MovieApp DB" server in the left panel.
+- If prompted for a password, enter the `DB_PASS` value from the `.env` file.
 
-## Veritabanı Yapısını Gösterme
+## Viewing the Database Structure
 
-### Tabloları Görüntüleme
+### Viewing Tables
 
-1. Sol panelde şu yolu takip edin:
+1. In the left panel, navigate the following path:
    ```
    Servers
    └── MovieApp DB
@@ -45,121 +46,121 @@ Bu rehber, pgAdmin kullanarak veritabanını görüntüleme ve öğretmene göst
                        └── Tables
    ```
 
-2. Tables klasöründe tüm tablolar görünecek:
-   - `users` - Kullanıcılar
-   - `reviews` - Film yorumları
-   - `favorites` - Favori filmler
-   - `groups` - Gruplar
-   - `group_members` - Grup üyeleri
-   - `join_requests` - Katılım istekleri
-   - `group_content` - Grup içeriği (filmler)
+2. The Tables folder shows all tables, including:
+   - `users` — Users
+   - `reviews` — Movie reviews
+   - `favorites` — Favorite movies
+   - `groups` — Groups
+   - `group_members` — Group members
+   - `join_requests` — Join requests
+   - `group_content` — Group content (movies)
 
-### Tablo İçeriğini Görüntüleme
+### Viewing Table Data
 
-1. İstediğiniz tabloya sağ tıklayın
-2. "View/Edit Data" > "All Rows" seçin
-3. Tablodaki tüm veriler görünecek
+1. Right-click the table you want to inspect.
+2. Select "View/Edit Data" > "All Rows".
+3. All records in the table will be displayed.
 
-### Tablo Yapısını (Schema) Görüntüleme
+### Viewing Table Schema
 
-1. Tabloya sağ tıklayın
-2. "Properties" seçin
-3. "Columns" tab'ında tüm kolonlar ve tipleri görünecek
+1. Right-click the table.
+2. Choose "Properties".
+3. The "Columns" tab lists all columns and their types.
 
-## SQL Sorguları Çalıştırma
+## Running SQL Queries
 
-### Query Tool Kullanımı
+### Using the Query Tool
 
-1. Sol panelde "moviehub" veritabanına sağ tıklayın
-2. "Query Tool" seçin
-3. SQL sorgusu yazın
-4. Execute (F5) veya Run (▶️) butonuna tıklayın
+1. Right-click the `moviehub` database in the left panel.
+2. Select "Query Tool".
+3. Enter your SQL query.
+4. Execute with F5 or the Run (▶️) button.
 
-### Örnek Sorgular
+### Example Queries
 
 ```sql
--- Tüm kullanıcıları listele
+-- List all users
 SELECT * FROM users;
 
--- Toplam kullanıcı sayısı
-SELECT COUNT(*) as total_users FROM users;
+-- Total number of users
+SELECT COUNT(*) AS total_users FROM users;
 
--- Tüm grupları listele
+-- List all groups
 SELECT * FROM groups;
 
--- Grup sayısı
-SELECT COUNT(*) as total_groups FROM groups;
+-- Total number of groups
+SELECT COUNT(*) AS total_groups FROM groups;
 
--- Tüm yorumları listele
+-- List all reviews
 SELECT * FROM reviews;
 
--- En çok yorum yapan kullanıcılar
-SELECT u.email, COUNT(r.id) as review_count
+-- Users with the most reviews
+SELECT u.email, COUNT(r.id) AS review_count
 FROM users u
 LEFT JOIN reviews r ON u.id = r.user_id
 GROUP BY u.id, u.email
 ORDER BY review_count DESC;
 
--- Favori film sayısı
-SELECT COUNT(*) as total_favorites FROM favorites;
+-- Total favorites
+SELECT COUNT(*) AS total_favorites FROM favorites;
 
--- Grup üye sayıları
-SELECT g.name, COUNT(gm.id) as member_count
+-- Group member counts
+SELECT g.name, COUNT(gm.id) AS member_count
 FROM groups g
 LEFT JOIN group_members gm ON g.id = gm.group_id
 GROUP BY g.id, g.name
 ORDER BY member_count DESC;
 
--- Bekleyen katılım istekleri
+-- Pending join requests
 SELECT * FROM join_requests WHERE status = 'pending';
 ```
 
-## Veritabanı İlişkilerini Gösterme
+## Visualizing Database Relationships
 
-1. Sol panelde "moviehub" veritabanına sağ tıklayın
-2. "ERD Tool" (Entity Relationship Diagram) seçin
-3. Tüm tablolar ve ilişkileri görsel olarak gösterilir
+1. Right-click the `moviehub` database in the left panel.
+2. Choose the ERD Tool (Entity Relationship Diagram).
+3. The tool will display tables and their relationships visually.
 
-## Öğretmene Gösterme İçin Öneriler
+## Tips for Demonstrating to an Instructor
 
-### 1. Tablo Yapısını Gösterin
-- Her tablonun kolonlarını ve veri tiplerini gösterin
-- İlişkileri (Foreign Keys) açıklayın
+### 1. Show Table Schemas
+- Display each table's columns and data types.
+- Explain foreign key relationships.
 
-### 2. Örnek Verileri Gösterin
-- Her tabloda birkaç örnek kayıt gösterin
-- Verilerin gerçek kullanımdan geldiğini belirtin
+### 2. Show Sample Data
+- Show a few example records from each table.
+- Mention that the data comes from real usage of the app.
 
-### 3. İlişkileri Açıklayın
-- users → reviews (Bir kullanıcı birden fazla yorum yapabilir)
-- users → favorites (Bir kullanıcı birden fazla favori ekleyebilir)
-- groups → group_members (Bir grup birden fazla üyeye sahip olabilir)
-- groups → group_content (Bir grup birden fazla film içerebilir)
+### 3. Explain Relationships
+- `users` → `reviews` (a user can have multiple reviews)
+- `users` → `favorites` (a user can have multiple favorites)
+- `groups` → `group_members` (a group can have many members)
+- `groups` → `group_content` (a group can contain many movies)
 
-### 4. SQL Sorguları Çalıştırın
-- Basit SELECT sorguları
-- JOIN sorguları (ilişkili tabloları birleştirme)
-- COUNT, GROUP BY gibi aggregate fonksiyonlar
+### 4. Run SQL Queries
+- Run simple SELECT queries.
+- Demonstrate JOIN queries that combine related tables.
+- Use COUNT, GROUP BY, and other aggregate functions.
 
-### 5. Veritabanı Şemasını Gösterin
-- ERD Tool ile görsel şema
-- docs/DATABASE_MODEL.md dosyasını referans gösterin
+### 5. Show the Database Model
+- Use the ERD Tool for a visual schema overview.
+- Refer to [docs/DATABASE_MODEL.md](docs/DATABASE_MODEL.md) for details.
 
-## Hızlı Erişim Bilgileri
+## Quick Access Information
 
 - **pgAdmin URL:** http://localhost:5050
 - **pgAdmin Email:** admin@movieapp.com
 - **pgAdmin Password:** admin
-- **Database Host:** postgres (Docker container adı)
+- **Database Host:** postgres (Docker container name)
 - **Database Port:** 5432
 - **Database Name:** moviehub
 - **Database User:** postgres
-- **Database Password:** .env dosyasındaki DB_PASS değeri
+- **Database Password:** the `DB_PASS` value from the `.env` file
 
-## Notlar
+## Notes
 
-- Docker container'ları çalışıyorsa veritabanı erişilebilir
-- pgAdmin container'ı çalışmıyorsa: `docker-compose up -d pgadmin`
-- Veritabanı container'ı çalışmıyorsa: `docker-compose up -d postgres`
-- Tüm servisleri kontrol etmek için: `docker-compose ps`
+- The database is accessible if the Docker containers are running.
+- If the pgAdmin container isn't running: `docker-compose up -d pgadmin`
+- If the Postgres container isn't running: `docker-compose up -d postgres`
+- To check all services: `docker-compose ps`
 
