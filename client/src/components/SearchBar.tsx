@@ -118,7 +118,11 @@ export function SearchBar({ onSearch }: SearchBarProps) {
               </Label>
               <Select
                 value={filters.genre}
-                onValueChange={(value) => setFilters({ ...filters, genre: value })}
+                onValueChange={(value) => {
+                  const newFilters = { ...filters, genre: value };
+                  setFilters(newFilters);
+                  onSearch(newFilters);
+                }}
               >
                 <SelectTrigger
                   id="genre"
@@ -147,7 +151,11 @@ export function SearchBar({ onSearch }: SearchBarProps) {
               </Label>
               <Select
                 value={filters.year}
-                onValueChange={(value) => setFilters({ ...filters, year: value })}
+                onValueChange={(value) => {
+                  const newFilters = { ...filters, year: value };
+                  setFilters(newFilters);
+                  onSearch(newFilters);
+                }}
               >
                 <SelectTrigger
                   id="year"
@@ -174,12 +182,16 @@ export function SearchBar({ onSearch }: SearchBarProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-zinc-300">Minimum Rating</Label>
-              <span className="text-white">{filters.minRating.toFixed(1)} / 5.0</span>
+              <span className="text-white">{filters.minRating.toFixed(1)} / 10.0</span>
             </div>
             <Slider
               value={[filters.minRating]}
-              onValueChange={(value) => setFilters({ ...filters, minRating: value[0] })}
-              max={5}
+              onValueChange={(value) => {
+                const newFilters = { ...filters, minRating: value[0] };
+                setFilters(newFilters);
+                onSearch(newFilters);
+              }}
+              max={10}
               step={0.5}
               className="w-full"
             />
@@ -189,4 +201,3 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     </div>
   );
 }
-

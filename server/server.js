@@ -13,6 +13,7 @@ import shareRoutes from './src/routes/share.routes.js';
 import groupsRoutes from './src/routes/groups.routes.js';
 import { errorHandler, notFoundHandler } from './src/middleware/error.middleware.js';
 
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -43,9 +44,25 @@ app.use(express.json());
 // Database connection
 connectDB();
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
+// Health check endpoint - keeps Supabase database active
+app.get('/api/health', async (req, res) => {
+  try {
+    // Import pool to make a real database query
+    const pool = (await import('./src/config/database.js')).default;
+    const result = await pool.query('SELECT NOW()');
+    res.json({
+      status: 'OK',
+      message: 'Server is running',
+      database: 'connected',
+      timestamp: result.rows[0].now
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'Database connection failed',
+      error: error.message
+    });
+  }
 });
 
 // API Routes

@@ -9,16 +9,33 @@ import {
 
 const router = express.Router();
 
-// Hae kaikki arvostelut julkinen
+/**
+ * @route   GET /api/reviews
+ * @desc    Get all reviews (public)
+ * @access  Public
+ */
 router.get('/', getAllReviews);
 
-// Luo uusi arvostelu vaatii kirjautumisen
+/**
+ * @route   POST /api/reviews
+ * @desc    Create a new review
+ * @access  Private
+ */
 router.post('/', authenticateToken, createReview);
 
-// Päivitä oma arvostelu
+/**
+ * @route   PUT /api/reviews/:id
+ * @desc    Update a review
+ * @access  Private (own review only)
+ */
 router.put('/:id', authenticateToken, updateReview);
 
-// Poista oma arvostelu
+/**
+ * @route   DELETE /api/reviews/:id
+ * @desc    Delete a review
+ * @access  Private (own review only)
+ */
 router.delete('/:id', authenticateToken, deleteReview);
 
 export default router;
+

@@ -30,15 +30,14 @@ export function EditGroupModal({ open, onClose, group, onSuccess }: EditGroupMod
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  // Kun modal avataan, täytetään kentät valitun ryhmän tiedoilla
+
   useEffect(() => {
     if (group) {
       setName(group.name || '');
       setDescription(group.description || '');
     }
   }, [group, open]);
-  
-  // Lähettää päivitetyt ryhmätiedot API:lle + validoinnit
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -59,8 +58,8 @@ export function EditGroupModal({ open, onClose, group, onSuccess }: EditGroupMod
     try {
       await groupsAPI.update(group.id, name.trim(), description.trim() || undefined);
       toast.success('Group updated successfully!');
-      onClose(); // sulke modelin
-      onSuccess?.(); //päivitä ryhmälistan
+      onClose();
+      onSuccess?.();
     } catch (error: any) {
       console.error('Failed to update group:', error);
       setError(error.message || 'Failed to update group');
@@ -68,7 +67,7 @@ export function EditGroupModal({ open, onClose, group, onSuccess }: EditGroupMod
       setLoading(false);
     }
   };
-// Sulkee modaalin vain jos ei ole kesken prosessia
+
   const handleClose = () => {
     if (!loading) {
       setError('');
@@ -151,3 +150,4 @@ export function EditGroupModal({ open, onClose, group, onSuccess }: EditGroupMod
     </Dialog>
   );
 }
+

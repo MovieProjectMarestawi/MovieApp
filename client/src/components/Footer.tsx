@@ -2,33 +2,26 @@ import { Link } from 'react-router-dom';
 import { Film } from 'lucide-react';
 
 export function Footer() {
-  // heataan tämän vuoden vuosiluku automattisesti
   const currentYear = new Date().getFullYear();
 
   return (
-    /*Footerin style  tausta tumma ja border on käytetty */
     <footer className="bg-zinc-950 border-t border-zinc-800 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* grit layout 1 sarake mobiilissa mut neljä saraketta isomassa näytössa*/}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-
-          {/* logo sekä nimit */}
+          {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              {/* sivun logoikuna */}
               <Film className="w-8 h-8 text-red-600" />
               <span className="text-2xl text-white font-bold">Movie4you</span>
             </div>
-            {/* Selitys about sivusto */}
             <p className="text-zinc-400 mb-4 max-w-md">
               Your ultimate destination for discovering, discussing, and sharing your favorite movies.
               Connect with fellow cinephiles and explore the world of cinema together.
             </p>
-            {/* some linkit  */}
 
           </div>
 
-          {/* Linkit missä vie sinne search sekä gropus ja favorites  */}
+          {/* Quick Links */}
           <div>
             <h3 className="text-white font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
@@ -55,7 +48,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* käytkötilin linkit esim profile , settings, login, register */}
+          {/* Account */}
           <div>
             <h3 className="text-white font-semibold mb-4">Account</h3>
             <ul className="space-y-2">
@@ -95,3 +88,4 @@ export function Footer() {
     </footer>
   );
 }
+

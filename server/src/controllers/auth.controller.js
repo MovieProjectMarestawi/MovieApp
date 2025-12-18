@@ -63,16 +63,23 @@ export const register = async (req, res, next) => {
       email: user.email,
     });
 
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       data: {
+        token,
         user: {
           id: user.id,
           email: user.email,
           created_at: user.created_at,
         },
-        token,
       },
     });
   } catch (error) {
@@ -125,15 +132,22 @@ export const login = async (req, res, next) => {
       email: user.email,
     });
 
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
     res.json({
       success: true,
       message: 'Login successful',
       data: {
+        token,
         user: {
           id: user.id,
           email: user.email,
         },
-        token,
       },
     });
   } catch (error) {
@@ -149,10 +163,15 @@ export const login = async (req, res, next) => {
  * token blacklisting if needed.
  */
 export const logout = async (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
 
   res.json({
     success: true,
-    message: 'Logout successful. Please remove the token from client storage.',
+    message: 'Logout successful',
   });
 };
 

@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authAPI, userAPI, favoritesAPI } from '../services/api';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { authAPI, userAPI } from '../services/api';
 import { toast } from 'sonner';
 
 interface User {
@@ -7,7 +7,7 @@ interface User {
   email: string;
   created_at?: string;
   updated_at?: string;
-  avatar_url?: string;
+  avatar_url?: string; // optional profile image url returned by backend
 }
 
 interface AuthContextType {
@@ -134,4 +134,3 @@ export function useAuth() {
   }
   return context;
 }
-

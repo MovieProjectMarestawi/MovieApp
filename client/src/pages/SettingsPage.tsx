@@ -43,7 +43,6 @@ export function SettingsPage() {
 
   useEffect(() => {
     if (user) {
-      // Asetetaan käyttäjän nykyinen sähköposti lomakkeeseen
       setFormData((prev) => ({
         ...prev,
         email: user.email || '',
@@ -51,7 +50,7 @@ export function SettingsPage() {
     }
   }, [user]);
 
-  // Odotetaan, että auth-tiedot latautuvat
+  // Wait for auth to finish loading before checking login status
   if (authLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -60,7 +59,6 @@ export function SettingsPage() {
     );
   }
 
-  // Jos ei kirjautunut  ohjataan login-sivulle
   if (!isLoggedIn || !user) {
     return <Navigate to="/login" />;
   }
@@ -71,17 +69,22 @@ export function SettingsPage() {
   };
 
   const validatePassword = (password: string): string => {
-    if (password.length < 8) return 'Password must be at least 8 characters long';
-    if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter';
-    if (!/[0-9]/.test(password)) return 'Password must contain at least one number';
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'Password must contain at least one number';
+    }
     return '';
   };
 
-  // Profiilin sähköpostin päivitys
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Tyhjennetään virheet
+    
+    // Reset errors
     setErrors({
       email: '',
       currentPassword: '',
@@ -89,7 +92,7 @@ export function SettingsPage() {
       confirmPassword: '',
     });
 
-    // Validointi
+    // Validate email
     if (!formData.email.trim()) {
       setErrors((prev) => ({ ...prev, email: 'Email is required' }));
       return;
@@ -100,7 +103,6 @@ export function SettingsPage() {
       return;
     }
 
-    // Ei muutoksia
     if (formData.email === user.email) {
       toast.info('No changes to save');
       return;
@@ -116,22 +118,22 @@ export function SettingsPage() {
         email: updatedUser.email,
       }));
     } catch (error: any) {
-      const msg = error.message || 'Failed to update profile';
-      if (msg.includes('already in use')) {
+      console.error('Profile update error:', error);
+      const errorMessage = error.message || 'Failed to update profile';
+      if (errorMessage.includes('already in use')) {
         setErrors((prev) => ({ ...prev, email: 'This email is already in use' }));
       } else {
-        toast.error(msg);
+        toast.error(errorMessage);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Salasanan vaihto
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Tyhjennetään virheet
+    
+    // Reset errors
     setErrors({
       email: '',
       currentPassword: '',
@@ -139,11 +141,13 @@ export function SettingsPage() {
       confirmPassword: '',
     });
 
+    // Validate current password
     if (!formData.currentPassword) {
       setErrors((prev) => ({ ...prev, currentPassword: 'Current password is required' }));
       return;
     }
 
+    // Validate new password
     if (!formData.newPassword) {
       setErrors((prev) => ({ ...prev, newPassword: 'New password is required' }));
       return;
@@ -155,6 +159,7 @@ export function SettingsPage() {
       return;
     }
 
+    // Validate confirm password
     if (formData.newPassword !== formData.confirmPassword) {
       setErrors((prev) => ({ ...prev, confirmPassword: 'Passwords do not match' }));
       return;
@@ -163,46 +168,48 @@ export function SettingsPage() {
     setPasswordLoading(true);
     try {
       await userAPI.changePassword(formData.currentPassword, formData.newPassword);
-
-      // Tyhjennetään kentät onnistuneen vaihdon jälkeen
-      setFormData({
-        email: formData.email,
+      // Clear form and errors first
+      setFormData((prev) => ({
+        ...prev,
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
-      });
-
+      }));
       setErrors({
         email: '',
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       });
-
-      toast.success('Password changed successfully!');
+      // Show success message
+      toast.success('Password changed successfully!', {
+        duration: 4000,
+      });
     } catch (error: any) {
-      const msg = error.message || 'Failed to change password';
-
-      // Tarkat virheilmoitukset
-      if (msg.includes('incorrect')) {
+      console.error('Password change error:', error);
+      const errorMessage = error.message || 'Failed to change password';
+      
+      // Handle specific error cases
+      if (errorMessage.includes('incorrect') || errorMessage.includes('Current password')) {
         setErrors((prev) => ({ ...prev, currentPassword: 'Current password is incorrect' }));
-      } else if (msg.includes('must be different')) {
-        setErrors((prev) => ({ ...prev, newPassword: 'New password must be different' }));
-      } else if (msg.includes('required')) {
-        if (msg.includes('currentPassword')) {
+      } else if (errorMessage.includes('different') || errorMessage.includes('must be different')) {
+        setErrors((prev) => ({ ...prev, newPassword: 'New password must be different from current password' }));
+      } else if (errorMessage.includes('required')) {
+        // Handle required field errors
+        if (errorMessage.includes('currentPassword')) {
           setErrors((prev) => ({ ...prev, currentPassword: 'Current password is required' }));
-        } else if (msg.includes('newPassword')) {
+        } else if (errorMessage.includes('newPassword')) {
           setErrors((prev) => ({ ...prev, newPassword: 'New password is required' }));
         }
       } else {
-        toast.error(msg);
+        // Show general error message
+        toast.error(errorMessage);
       }
     } finally {
       setPasswordLoading(false);
     }
   };
 
-  // Tilin poistaminen
   const handleDeleteAccount = async () => {
     setDeleteLoading(true);
     try {
@@ -211,6 +218,7 @@ export function SettingsPage() {
       navigate('/');
       toast.success('Account deleted successfully');
     } catch (error: any) {
+      console.error('Delete account error:', error);
       toast.error(error.message || 'Failed to delete account');
     } finally {
       setDeleteLoading(false);
@@ -221,16 +229,14 @@ export function SettingsPage() {
   return (
     <div className="min-h-screen bg-black py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Sivun otsikko ja kuvaus */}
+        {/* Header */}
         <div className="mb-8">
           <h1 className="text-white text-4xl mb-2">Account Settings</h1>
           <p className="text-zinc-400">Manage your account preferences and security</p>
         </div>
 
         <div className="space-y-6">
-
-          {/* Profiilin sähköpostin muokkaus */}
+          {/* Profile Information */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
               <CardTitle className="text-white">Profile Information</CardTitle>
@@ -240,8 +246,6 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleProfileUpdate} className="space-y-4">
-
-                {/* Sähköpostikenttä */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-zinc-300">
                     Email
@@ -256,7 +260,9 @@ export function SettingsPage() {
                         setFormData({ ...formData, email: e.target.value });
                         setErrors((prev) => ({ ...prev, email: '' }));
                       }}
-                      className={`pl-10 bg-zinc-800 border-zinc-700 text-white ${errors.email ? 'border-red-500' : ''}`}
+                      className={`pl-10 bg-zinc-800 border-zinc-700 text-white ${
+                        errors.email ? 'border-red-500' : ''
+                      }`}
                       required
                     />
                   </div>
@@ -276,7 +282,7 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Salasanan vaihto */}
+          {/* Change Password */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
               <CardTitle className="text-white">Change Password</CardTitle>
@@ -286,8 +292,6 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePasswordChange} className="space-y-4">
-
-                {/* Nykyinen salasana */}
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword" className="text-zinc-300">
                     Current Password
@@ -316,7 +320,6 @@ export function SettingsPage() {
                   )}
                 </div>
 
-                {/* Uusi salasana */}
                 <div className="space-y-2">
                   <Label htmlFor="newPassword" className="text-zinc-300">
                     New Password
@@ -348,7 +351,6 @@ export function SettingsPage() {
                   </p>
                 </div>
 
-                {/* Uuden salasanan varmistus */}
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword" className="text-zinc-300">
                     Confirm New Password
@@ -385,7 +387,7 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Vaaravyöhyke tilin poisto */}
+          {/* Danger Zone */}
           <Card className="bg-zinc-900 border-red-900">
             <CardHeader>
               <CardTitle className="text-red-400">Danger Zone</CardTitle>
@@ -401,7 +403,6 @@ export function SettingsPage() {
                     Once you delete your account, there is no going back. All your data will be permanently removed.
                   </p>
                 </div>
-
                 <Button
                   onClick={() => setShowDeleteDialog(true)}
                   variant="outline"
@@ -417,31 +418,27 @@ export function SettingsPage() {
         </div>
       </div>
 
-      {/* Tilin poistamisen vahvistusikkuna */}
+      {/* Delete Account Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-red-400">
               Delete Account Permanently?
             </AlertDialogTitle>
-
-            {/* Poiston varoitusteksti */}
             <AlertDialogDescription className="text-zinc-400">
               This action cannot be undone. This will permanently delete your account and remove all your data from our servers, including:
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>Your profile and account information</li>
-                <li>Your favorite movies</li>
+                <li>All your favorite movies</li>
                 <li>Your group memberships</li>
-                <li>Your reviews and ratings</li>
+                <li>All your reviews and ratings</li>
               </ul>
             </AlertDialogDescription>
           </AlertDialogHeader>
-
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border-zinc-700 text-white hover:bg-zinc-800">
               Cancel
             </AlertDialogCancel>
-
             <AlertDialogAction
               onClick={handleDeleteAccount}
               className="bg-red-600 hover:bg-red-700"

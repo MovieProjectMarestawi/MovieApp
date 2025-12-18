@@ -22,7 +22,6 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 
-// Ryhmän tiedon rakenne (tyyppi)
 interface Group {
   id: number;
   name: string;
@@ -54,19 +53,15 @@ export function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isLoggedIn, loading: authLoading, user } = useAuth();
-
   const [group, setGroup] = useState<Group | null>(null);
   const [groupMovies, setGroupMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRemoveMemberDialog, setShowRemoveMemberDialog] = useState(false);
   const [showDeleteGroupDialog, setShowDeleteGroupDialog] = useState(false);
-
   const [memberToRemove, setMemberToRemove] = useState<{ id: number; email: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
-
   const [joinRequests, setJoinRequests] = useState<Array<{
     id: number;
     user_id: number;
@@ -74,26 +69,27 @@ export function GroupDetailPage() {
     status: string;
     requested_at: string;
   }>>([]);
-
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [groupImageUrl, setGroupImageUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('movies');
 
-  // Haetaan liittymispyynnöt vain omistajalle
   const fetchJoinRequests = useCallback(async () => {
     if (!id) return;
     try {
       setLoadingRequests(true);
       const requests = await groupsAPI.getJoinRequests(Number(id));
       setJoinRequests(requests.requests || []);
-    } catch {
-      // Ei näytetä virhettä jos käyttäjä ei ole omistaja
+    } catch (error: any) {
+      console.error('Failed to fetch join requests:', error);
+      // Don't show error if user is not owner (403)
+      if (error.message && !error.message.includes('owner')) {
+        toast.error('Failed to load join requests');
+      }
     } finally {
       setLoadingRequests(false);
     }
   }, [id]);
 
-  // Haetaan ryhmän tiedot backendistä
   const fetchGroup = useCallback(async () => {
     if (!id) return;
 
@@ -102,13 +98,14 @@ export function GroupDetailPage() {
       const groupData = await groupsAPI.getDetails(Number(id));
       setGroup(groupData);
 
-      // Haetaan ryhmän elokuvat jos käyttäjä on jäsen
+      // If user is member, fetch group movies
       if (groupData.is_member && groupData.content) {
         const moviePromises = groupData.content.map(async (item: any) => {
           try {
             const movieData = await moviesAPI.getDetails(item.movie_id);
             return convertTMDBToMovie(movieData);
-          } catch {
+          } catch (error) {
+            console.error(`Failed to fetch movie ${item.movie_id}:`, error);
             return null;
           }
         });
@@ -116,31 +113,33 @@ export function GroupDetailPage() {
         const movies = (await Promise.all(moviePromises)).filter((m): m is Movie => m !== null);
         setGroupMovies(movies);
 
-        // Ryhmän kuva otetaan ensimmäisen elokuvan posterista
+        // Set group image from first movie's poster
         if (movies.length > 0 && movies[0].posterUrl) {
           setGroupImageUrl(`https://image.tmdb.org/t/p/w500${movies[0].posterUrl}`);
         } else {
           setGroupImageUrl(null);
         }
+      } else {
+        setGroupImageUrl(null);
       }
 
-      // Omistaja hakee myös liittymispyynnöt
+      // If user is owner, fetch join requests
       if (groupData.is_owner) {
         await fetchJoinRequests();
       }
-    } catch {
+    } catch (error: any) {
+      console.error('Error fetching group:', error);
       toast.error('Failed to load group details');
     } finally {
       setLoading(false);
     }
   }, [id, fetchJoinRequests]);
 
-  // Haetaan ryhmä kun sivu avataan
   useEffect(() => {
     fetchGroup();
   }, [fetchGroup]);
 
-  // Odotetaan authia ennen kuin tarkistetaan jäsenyys
+  // Wait for auth to finish loading before checking login status
   if (authLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -149,12 +148,10 @@ export function GroupDetailPage() {
     );
   }
 
-  // Jos käyttäjä ei ole kirjautunut login sivulle
   if (!isLoggedIn) {
     return <Navigate to="/login" />;
   }
 
-  // Näytetään lataus
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -163,7 +160,6 @@ export function GroupDetailPage() {
     );
   }
 
-  // Jos ryhmää ei löytynyt
   if (!group) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -177,7 +173,6 @@ export function GroupDetailPage() {
     );
   }
 
-  // Jos käyttäjä ei ole ryhmän jäsen
   if (!group.is_member) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center px-4">
@@ -185,17 +180,14 @@ export function GroupDetailPage() {
           <Users className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
           <h2 className="text-white text-2xl mb-2">Members Only</h2>
           <p className="text-zinc-400 mb-6">
-            Tämä ryhmä näkyy vain sen jäsenille.
+            This group is only visible to its members. Join the group to access its content.
           </p>
-
-          {/* Toiminnot palaa tai pyydä liittymistä */}
           <div className="flex gap-4 justify-center">
             <Link to="/groups">
               <Button variant="outline" className="bg-transparent border-zinc-700 text-white hover:bg-zinc-900">
                 Browse Groups
               </Button>
             </Link>
-
             <Button
               className="bg-red-600 hover:bg-red-700"
               onClick={async () => {
@@ -216,7 +208,6 @@ export function GroupDetailPage() {
     );
   }
 
-  // Ryhmästä poistuminen
   const handleLeaveGroup = async () => {
     try {
       await groupsAPI.leave(Number(id));
@@ -228,55 +219,49 @@ export function GroupDetailPage() {
     }
   };
 
-  // Hyväksytään liittymispyyntö
   const handleApproveRequest = async (requestId: number) => {
     try {
       await groupsAPI.approveRequest(Number(id), requestId);
       toast.success('Join request approved');
       await fetchJoinRequests();
-      await fetchGroup();
-    } catch {
-      toast.error('Failed to approve request');
+      await fetchGroup(); // Refresh group to update member count
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to approve request');
     }
   };
 
-  // Hylätään liittymispyyntö
   const handleRejectRequest = async (requestId: number) => {
     try {
       await groupsAPI.rejectRequest(Number(id), requestId);
       toast.success('Join request rejected');
       await fetchJoinRequests();
-    } catch {
-      toast.error('Failed to reject request');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to reject request');
     }
   };
 
-  // Poistetaan jäsen ryhmästä
   const handleRemoveMember = async () => {
     if (!memberToRemove || !id) return;
-
     try {
       await groupsAPI.removeMember(Number(id), memberToRemove.id);
-      toast.success(`Removed ${memberToRemove.email}`);
+      toast.success(`Removed ${memberToRemove.email} from group`);
       setShowRemoveMemberDialog(false);
       setMemberToRemove(null);
-      await fetchGroup();
-    } catch {
-      toast.error('Failed to remove member');
+      await fetchGroup(); // Refresh group to update member count
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to remove member');
     }
   };
 
-  // Ryhmän poistaminen kokonaan
   const handleDeleteGroup = async () => {
     if (!id) return;
-
     try {
       setDeleting(true);
       await groupsAPI.delete(Number(id));
-      toast.success(`Group "${group?.name}" deleted`);
+      toast.success(`Group "${group?.name}" deleted successfully`);
       navigate('/groups');
-    } catch {
-      toast.error('Failed to delete group');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete group');
       setDeleting(false);
     }
   };
@@ -287,12 +272,9 @@ export function GroupDetailPage() {
 
   return (
     <div className="min-h-screen bg-black">
-
-      {/* Ryhmän yläosan tiedot */}
+      {/* Header */}
       <div className="bg-zinc-900 border-b border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-          {/* Takaisin ryhmälistaan */}
           <Link to="/groups">
             <Button variant="ghost" className="text-zinc-400 hover:text-white hover:bg-zinc-800 mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -301,8 +283,7 @@ export function GroupDetailPage() {
           </Link>
 
           <div className="flex flex-col md:flex-row gap-6 items-start">
-
-            {/* Ryhmän kuva */}
+            {/* Group Image */}
             <div className="w-full md:w-48 aspect-video rounded-lg overflow-hidden bg-zinc-800 flex items-center justify-center">
               {groupImageUrl ? (
                 <ImageWithFallback
@@ -315,29 +296,26 @@ export function GroupDetailPage() {
               )}
             </div>
 
-            {/* Ryhmän tiedot */}
+            {/* Group Info */}
             <div className="flex-1">
               <div className="flex items-start justify-between mb-3">
                 <h1 className="text-white text-3xl md:text-4xl">{group.name}</h1>
-
-                {/* Omistajan toiminnot */}
                 {group.is_owner && (
                   <div className="flex gap-2">
                     <Button
                       onClick={() => setShowEditModal(true)}
                       variant="outline"
                       size="sm"
-                      className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                      className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 cursor-pointer"
                     >
                       <Edit className="w-4 h-4 mr-2" />
                       Edit
                     </Button>
-
                     <Button
                       onClick={() => setShowDeleteGroupDialog(true)}
                       variant="outline"
                       size="sm"
-                      className="bg-transparent border-red-800 text-red-400 hover:bg-red-950"
+                      className="bg-transparent border-red-800 text-red-400 hover:bg-red-950 hover:text-red-300 cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete
@@ -345,34 +323,29 @@ export function GroupDetailPage() {
                   </div>
                 )}
               </div>
-
               <p className="text-zinc-300 mb-4">{group.description || 'No description'}</p>
 
-              {/* Ryhmän perustiedot */}
               <div className="flex flex-wrap items-center gap-4 mb-4 text-zinc-400">
                 <div className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
-                  <span>{group.member_count} members</span>
+                  <span>{Number(group.member_count) || 0} members</span>
                 </div>
-
                 <div className="flex items-center gap-2">
                   <Crown className="w-5 h-5 text-yellow-500" />
                   <span>Owner: {group.owner_email.split('@')[0]}</span>
                 </div>
-
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
                   <span>Created {new Date(group.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
 
-              {/* Poistu ryhmästä -painike */}
               <div className="flex gap-3">
                 {!group.is_owner && (
                   <Button
                     onClick={() => setShowLeaveDialog(true)}
                     variant="outline"
-                    className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-red-950 hover:text-red-400"
+                    className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-red-950 hover:text-red-400 hover:border-red-800"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     Leave Group
@@ -384,39 +357,31 @@ export function GroupDetailPage() {
         </div>
       </div>
 
-      {/* Sisältö: elokuvat, jäsenet, pyynnöt */}
+      {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* Pääsisältö */}
+          {/* Main Content */}
           <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-
-              {/* Tab valikko */}
               <TabsList className="bg-zinc-900 border border-zinc-800 mb-6">
-                {/* Elokuvat valikko */}
                 <TabsTrigger
                   value="movies"
-                  className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-zinc-400"
+                  className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-zinc-400 cursor-pointer"
                 >
                   <Film className="w-4 h-4 mr-2" />
                   Movies ({groupMovies.length})
                 </TabsTrigger>
-
-                {/* Jäsenet */}
                 <TabsTrigger
                   value="members"
-                  className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-zinc-400"
+                  className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-zinc-400 cursor-pointer"
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Members ({group.members?.length || 0})
                 </TabsTrigger>
-
-                {/* Liittymispyynnöt  vain omistajalle */}
                 {group.is_owner && (
                   <TabsTrigger
                     value="requests"
-                    className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-zinc-400"
+                    className="data-[state=active]:bg-red-600 data-[state=active]:text-white text-zinc-400 cursor-pointer"
                   >
                     <Bell className="w-4 h-4 mr-2" />
                     Join Requests
@@ -429,28 +394,22 @@ export function GroupDetailPage() {
                 )}
               </TabsList>
 
-              {/* Elokuvat-tab sisältö */}
-              <TabsContent value="movies">
-                {/* Otsikko + Lisää elokuva */}
+              {/* Movies Tab */}
+              <TabsContent value="movies" className="mt-0">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <Film className="w-6 h-6 text-red-600" />
                     <h2 className="text-white text-2xl">Group's Movies</h2>
                   </div>
-
-                  {/* Omistaja voi lisätä elokuvia */}
                   {group.is_owner && (
-                    <Link to="/search">
-                      <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                    <Link to="/search" className="cursor-pointer">
+                      <Button size="sm" className="bg-red-600 hover:bg-red-700 cursor-pointer">
                         <Plus className="w-4 h-4 mr-2" />
                         Add Movie
                       </Button>
                     </Link>
                   )}
                 </div>
-
-
-                {/* Elokuvat gridinä */}
                 {groupMovies.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
                     {groupMovies.map((movie) => (
@@ -459,26 +418,27 @@ export function GroupDetailPage() {
                         movie={movie}
                         showRemoveButton={group.is_owner}
                         onRemove={async () => {
+                          if (!id) return;
                           try {
                             await groupsAPI.removeMovie(Number(id), movie.id);
-                            toast.success(`Removed "${movie.title}"`);
+                            toast.success(`Removed "${movie.title}" from group`);
+                            // Refresh group data
                             await fetchGroup();
-                          } catch {
-                            toast.error('Failed to remove movie');
+                          } catch (error: any) {
+                            console.error('Failed to remove movie:', error);
+                            toast.error(error.message || 'Failed to remove movie from group');
                           }
                         }}
                       />
                     ))}
                   </div>
                 ) : (
-                  // Ei vielä elokuvia
                   <div className="bg-zinc-900 rounded-lg p-8 text-center border border-zinc-800">
                     <Film className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                    <p className="text-zinc-400 mb-4">No movies added yet</p>
-
+                    <p className="text-zinc-400 mb-4">No movies added to this group yet</p>
                     {group.is_owner && (
-                      <Link to="/search">
-                        <Button className="bg-red-600 hover:bg-red-700">
+                      <Link to="/search" className="cursor-pointer">
+                        <Button className="bg-red-600 hover:bg-red-700 cursor-pointer">
                           <Plus className="w-4 h-4 mr-2" />
                           Add Your First Movie
                         </Button>
@@ -488,45 +448,39 @@ export function GroupDetailPage() {
                 )}
               </TabsContent>
 
-              {/* Jäsenet tab sisältö */}
-              <TabsContent value="members">
+              {/* Members Tab */}
+              <TabsContent value="members" className="mt-0">
                 <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-                  <h3 className="text-white text-xl flex items-center gap-2 mb-6">
-                    <Users className="w-5 h-5 text-red-600" />
-                    Members ({group.members?.length || 0})
-                  </h3>
-
-                  {/* Jäsenlista */}
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-white text-xl flex items-center gap-2">
+                      <Users className="w-5 h-5 text-red-600" />
+                      Members ({group.members?.length || 0})
+                    </h3>
+                  </div>
                   <div className="space-y-3 max-h-[600px] overflow-y-auto">
                     {group.members && group.members.length > 0 ? (
                       group.members.map((member) => (
-                        <div key={member.id} className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
-
-                          {/* Jäsenen tiedot */}
+                        <div key={member.id} className="flex items-center justify-between gap-3 p-3 bg-zinc-800 rounded-lg">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <Avatar className="w-12 h-12 border-2 border-zinc-700">
                               <AvatarFallback className="bg-zinc-800 flex items-center justify-center">
                                 <User className="w-6 h-6 text-zinc-400" />
+                                <span className="sr-only">{getInitials(member.email)}</span>
                               </AvatarFallback>
                             </Avatar>
-
                             <div className="flex-1 min-w-0">
                               <p className="text-white font-medium truncate">{member.email}</p>
-
                               {member.role === 'owner' && (
                                 <p className="text-zinc-500 text-sm flex items-center gap-1 mt-1">
                                   <Crown className="w-4 h-4 text-yellow-500" />
                                   Owner
                                 </p>
                               )}
-
                               <p className="text-zinc-500 text-xs mt-1">
                                 Joined {new Date(member.joined_at).toLocaleDateString()}
                               </p>
                             </div>
                           </div>
-
-                          {/* Omistaja voi poistaa jäseniä */}
                           {group.is_owner && member.role !== 'owner' && (
                             <Button
                               size="sm"
@@ -535,7 +489,8 @@ export function GroupDetailPage() {
                                 setMemberToRemove({ id: member.user_id, email: member.email });
                                 setShowRemoveMemberDialog(true);
                               }}
-                              className="bg-transparent border-red-800 text-red-400 hover:bg-red-950"
+                              className="bg-transparent border-red-800 text-red-400 hover:bg-red-950 hover:text-red-300 cursor-pointer"
+                              title="Remove member"
                             >
                               <XIcon className="w-4 h-4" />
                             </Button>
@@ -543,7 +498,6 @@ export function GroupDetailPage() {
                         </div>
                       ))
                     ) : (
-                      // Ei jäseniä
                       <div className="text-center py-12">
                         <Users className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
                         <p className="text-zinc-400">No members</p>
@@ -553,70 +507,74 @@ export function GroupDetailPage() {
                 </div>
               </TabsContent>
 
-              {/* Liittymispyynnöt tab omistajalle */}
+              {/* Join Requests Tab (Owner Only) */}
               {group.is_owner && (
-                <TabsContent value="requests">
+                <TabsContent value="requests" className="mt-0">
                   <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-
-                    <h3 className="text-white text-xl flex items-center gap-2 mb-6">
-                      <Bell className="w-5 h-5 text-red-600" />
-                      Join Requests
-                    </h3>
-
-                    {/* Ladataan pyynnöt */}
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-white text-xl flex items-center gap-2">
+                        <Bell className="w-5 h-5 text-red-600" />
+                        Join Requests
+                        {joinRequests.length > 0 && (
+                          <span className="bg-red-600 text-white text-xs px-2 py-1 rounded-full ml-2">
+                            {joinRequests.length}
+                          </span>
+                        )}
+                      </h3>
+                    </div>
                     {loadingRequests ? (
                       <div className="text-center py-12">
-                        <p className="text-zinc-400">Loading...</p>
+                        <p className="text-zinc-400">Loading requests...</p>
                       </div>
                     ) : joinRequests.length > 0 ? (
-                      // Lista pyynnöistä
                       <div className="space-y-3 max-h-[600px] overflow-y-auto">
                         {joinRequests.map((request) => (
                           <div key={request.id} className="flex items-center justify-between p-4 bg-zinc-800 rounded-lg">
-
-                            {/* Pyynnön tiedot */}
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                               <Avatar className="w-12 h-12 border border-zinc-700">
                                 <AvatarFallback className="bg-zinc-800 flex items-center justify-center">
                                   <User className="w-6 h-6 text-zinc-400" />
+                                  <span className="sr-only">{getInitials(request.user_email)}</span>
                                 </AvatarFallback>
                               </Avatar>
-
                               <div className="flex-1 min-w-0">
                                 <p className="text-white font-medium truncate">{request.user_email}</p>
                                 <p className="text-zinc-500 text-xs mt-1">
-                                  Requested {new Date(request.requested_at).toLocaleDateString()}
+                                  Requested {new Date(request.requested_at).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
                                 </p>
                               </div>
                             </div>
-
-                            {/* Hyväksy tai hylkää */}
                             <div className="flex gap-2 ml-4">
                               <Button
                                 size="sm"
                                 onClick={() => handleApproveRequest(request.id)}
-                                className="bg-green-600 hover:bg-green-700 text-white"
+                                className="bg-green-600 hover:bg-green-700 text-white border-none"
+                                title="Approve"
                               >
                                 <Check className="w-4 h-4 mr-2" />
                                 Approve
                               </Button>
-
                               <Button
                                 size="sm"
-                                variant="outline"
                                 onClick={() => handleRejectRequest(request.id)}
+                                variant="outline"
                                 className="bg-transparent border-red-800 text-red-400 hover:bg-red-950"
+                                title="Reject"
                               >
                                 <XIcon className="w-4 h-4 mr-2" />
                                 Reject
                               </Button>
                             </div>
-
                           </div>
                         ))}
                       </div>
                     ) : (
-                      // Ei odottavia pyyntöjä
                       <div className="text-center py-12">
                         <Bell className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
                         <p className="text-zinc-400">No pending requests</p>
@@ -628,101 +586,102 @@ export function GroupDetailPage() {
             </Tabs>
           </div>
 
-          {/* Sivu   ryhmän statistiikka */}
+          {/* Group Stats Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800 sticky top-24">
-
               <h3 className="text-white text-xl mb-4">Group Stats</h3>
-
               <div className="space-y-6">
-
                 <div>
                   <span className="text-zinc-400 text-sm">Total Members</span>
-                  <div className="text-white text-2xl mt-1">{group.member_count}</div>
+                  <div className="text-white text-2xl font-semibold mt-1">{Number(group.member_count) || 0}</div>
                 </div>
-
                 <div>
                   <span className="text-zinc-400 text-sm">Movies Added</span>
-                  <div className="text-white text-2xl mt-1">{groupMovies.length}</div>
+                  <div className="text-white text-2xl font-semibold mt-1">{groupMovies.length}</div>
                 </div>
-
                 <div>
                   <span className="text-zinc-400 text-sm">Created</span>
-                  <div className="text-white text-lg mt-1">
-                    {new Date(group.created_at).toLocaleDateString()}
-                  </div>
+                  <div className="text-white text-lg mt-1">{new Date(group.created_at).toLocaleDateString()}</div>
                 </div>
-
               </div>
             </div>
           </div>
-
         </div>
       </div>
 
-      {/* Poistu ryhmästä dialogi */}
+      {/* Leave Group Confirmation Dialog */}
       <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Leave {group.name}?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to leave this group?
+              Are you sure you want to leave this group? You'll need to request to join again if you change your mind.
             </AlertDialogDescription>
           </AlertDialogHeader>
-
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border-zinc-700 text-white hover:bg-zinc-800">
               Cancel
             </AlertDialogCancel>
-
-            <AlertDialogAction onClick={handleLeaveGroup} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={handleLeaveGroup}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Leave Group
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Poista jäsen dialogi */}
+      {/* Remove Member Confirmation Dialog */}
       <AlertDialog open={showRemoveMemberDialog} onOpenChange={setShowRemoveMemberDialog}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Member?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Remove member from group?
+              Are you sure you want to remove {memberToRemove?.email} from {group.name}? They will need to request to join again if they want to rejoin.
             </AlertDialogDescription>
           </AlertDialogHeader>
-
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-zinc-700 text-white hover:bg-zinc-800">
+            <AlertDialogCancel
+              className="bg-transparent border-zinc-700 text-white hover:bg-zinc-800 cursor-pointer"
+              onClick={() => {
+                setShowRemoveMemberDialog(false);
+                setMemberToRemove(null);
+              }}
+            >
               Cancel
             </AlertDialogCancel>
-
-            <AlertDialogAction onClick={handleRemoveMember} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={handleRemoveMember}
+              className="bg-red-600 hover:bg-red-700 cursor-pointer"
+            >
               Remove Member
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Poista koko ryhmä dialog */}
+      {/* Delete Group Confirmation Dialog */}
       <AlertDialog open={showDeleteGroupDialog} onOpenChange={setShowDeleteGroupDialog}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Group?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              This action cannot be undone.
+              Are you sure you want to delete "{group?.name}"? This action cannot be undone. All members will be removed and all movies will be deleted from this group.
             </AlertDialogDescription>
           </AlertDialogHeader>
-
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-zinc-700 text-white hover:bg-zinc-800">
+            <AlertDialogCancel
+              className="bg-transparent border-zinc-700 text-white hover:bg-zinc-800 cursor-pointer"
+              onClick={() => setShowDeleteGroupDialog(false)}
+              disabled={deleting}
+            >
               Cancel
             </AlertDialogCancel>
-
             <AlertDialogAction
               onClick={handleDeleteGroup}
               disabled={deleting}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 cursor-pointer"
             >
               {deleting ? 'Deleting...' : 'Delete Group'}
             </AlertDialogAction>
@@ -730,7 +689,7 @@ export function GroupDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Editointi ikkuna */}
+      {/* Edit Group Modal */}
       <EditGroupModal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}
@@ -743,7 +702,7 @@ export function GroupDetailPage() {
   );
 }
 
-// Muunnetaan TMDBelokuva meidän Movietyyppiin
+// Helper function to convert TMDb movie to our Movie type
 function convertTMDBToMovie(tmdbMovie: any): Movie {
   return {
     id: tmdbMovie.id,

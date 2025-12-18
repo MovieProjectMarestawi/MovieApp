@@ -20,7 +20,7 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { Toaster } from "./components/ui/sonner";
 import { Footer } from "./components/Footer";
 
-
+// Layout component for routes with navbar
 function LayoutWithNavbar() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -51,7 +51,7 @@ export default function App() {
     <AuthProvider>
       <Router>
         <ScrollToTop />
-        <div className="dark min-h-screen bg-black flex flex-col">
+        <div className="dark min-h-screen bg-black">
           <Routes>
             {/* Routes without navbar */}
             <Route path="/login" element={<LoginPage />} />

@@ -219,4 +219,3 @@ export function MovieCard({ movie, onRemove, showRemoveButton, calculatedRating,
     </div>
   );
 }
-

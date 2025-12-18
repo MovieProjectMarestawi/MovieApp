@@ -6,21 +6,18 @@ import { useAuth } from '../context/AuthContext';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface GroupCardProps {
-  //  ryhmä data joka APIsta
   group: Group;
-  // kustustaan silloin kun äytäjä paina "join group"
   onJoinClick?: (groupId: number) => void;
 }
 
 export function GroupCard({ group, onJoinClick }: GroupCardProps) {
   const { isLoggedIn } = useAuth();
-  // tossa API kertto että onko käytäjä ryyhmän jäsen
+  // isMember is passed from parent component based on API data
   const isMember = (group as any).is_member || false;
 
   return (
-    // kortin style ja hover käytöön 
     <div className="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-colors">
-      {/* Group kuvat  */}
+      {/* Group Image */}
       <div className="aspect-video relative overflow-hidden bg-zinc-800 flex items-center justify-center">
         {group.imageUrl && group.imageUrl.trim() !== '' ? (
           <ImageWithFallback
@@ -29,10 +26,8 @@ export function GroupCard({ group, onJoinClick }: GroupCardProps) {
             className="w-full h-full object-cover"
           />
         ) : (
-          // se näytä elokuvan kuva jos sihen ei ole kuva 
           <Film className="w-16 h-16 text-zinc-500" />
         )}
-        {/* lukko ikuna jos group ei le julkinen */}
         {!group.isPublic && (
           <div className="absolute top-3 right-3 p-2 bg-black/60 rounded-full">
             <Lock className="w-4 h-4 text-white" />
@@ -40,7 +35,7 @@ export function GroupCard({ group, onJoinClick }: GroupCardProps) {
         )}
       </div>
 
-      {/* Group tiedot */}
+      {/* Group Info */}
       <div className="p-5">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
@@ -48,13 +43,12 @@ export function GroupCard({ group, onJoinClick }: GroupCardProps) {
             <p className="text-zinc-400 text-sm line-clamp-2">{group.description}</p>
           </div>
         </div>
-        {/* jäsenmäärä */}
+
         <div className="flex items-center gap-4 mb-4 text-zinc-400 text-sm">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             <span>{Number(group.members) || 0} members</span>
           </div>
-          {/* elokuvien määrä jos saatavilla */}
           {group.movieCount !== undefined && (
             <div className="flex items-center gap-2">
               <Video className="w-4 h-4" />
@@ -65,13 +59,11 @@ export function GroupCard({ group, onJoinClick }: GroupCardProps) {
 
         {isLoggedIn && (
           <Link to={`/groups/${group.id}`}>
-            {/* Jos käyttäjä on jo jäsen — näytä "View Group" */}
             {isMember ? (
               <Button className="w-full bg-zinc-800 hover:bg-zinc-700 text-white">
                 View Group
               </Button>
             ) : (
-              // jos ei ole jäsen niin näytellä liittyryhmään
               <Button
                 className="w-full bg-red-600 hover:bg-red-700"
                 onClick={(e) => {
@@ -84,7 +76,7 @@ export function GroupCard({ group, onJoinClick }: GroupCardProps) {
             )}
           </Link>
         )}
-         {/* Jos käyttäjä ei ole kirjautunut — näytä login-nappi */}
+
         {!isLoggedIn && (
           <Link to="/login">
             <Button className="w-full bg-zinc-800 hover:bg-zinc-700 text-white">

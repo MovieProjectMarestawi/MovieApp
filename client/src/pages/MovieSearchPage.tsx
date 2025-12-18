@@ -65,28 +65,29 @@ export function MovieSearchPage() {
     loadInitialData();
   }, []);
 
-  const loadMovies = async (page: number, isSearch: boolean) => {
+  const loadMovies = async (page: number, isSearch: boolean, filters?: SearchFilters) => {
     setLoading(true);
+    const currentFilters = filters || activeFilters;
     try {
       let data;
 
-      if (isSearch && (activeFilters.query || activeFilters.genre !== 'all' || activeFilters.year !== 'all')) {
+      if (isSearch && (currentFilters.query || currentFilters.genre !== 'all' || currentFilters.year !== 'all')) {
         // Search mode
         let genreId: number | undefined;
-        if (activeFilters.genre && activeFilters.genre !== 'all' && activeFilters.genre !== 'all-genres') {
-          const genreObj = genres.find(g => 
-            g.name.toLowerCase() === activeFilters.genre.replace('-', ' ').toLowerCase()
+        if (currentFilters.genre && currentFilters.genre !== 'all' && currentFilters.genre !== 'all-genres') {
+          const genreObj = genres.find(g =>
+            g.name.toLowerCase() === currentFilters.genre.replace('-', ' ').toLowerCase()
           );
           genreId = genreObj?.id;
         }
 
-        const year = activeFilters.year && activeFilters.year !== 'all' && activeFilters.year !== 'all-years'
-          ? parseInt(activeFilters.year)
+        const year = currentFilters.year && currentFilters.year !== 'all' && currentFilters.year !== 'all-years'
+          ? parseInt(currentFilters.year)
           : undefined;
 
-        if (activeFilters.query) {
+        if (currentFilters.query) {
           // Use search endpoint
-          data = await moviesAPI.search(activeFilters.query || undefined, genreId, year, page);
+          data = await moviesAPI.search(currentFilters.query || undefined, genreId, year, page);
         } else {
           // Use discover endpoint
           data = await moviesAPI.discover(page, genreId, year);
@@ -100,17 +101,17 @@ export function MovieSearchPage() {
 
       // Calculate ratings from user reviews for all movies
       const moviesWithRatings = await Promise.all(
-        movies.map(async (movie) => {
+        movies.map(async (movie: Movie) => {
           try {
             const reviewsData = await moviesAPI.getReviews(movie.id, 1, 1000);
             const reviews = reviewsData.reviews || [];
             let calculatedRating: number | null = null;
-            
+
             if (reviews.length > 0) {
               const sum = reviews.reduce((acc: number, review: any) => acc + review.rating, 0);
               calculatedRating = (sum / reviews.length) * 2; // Convert 1-5 scale to 1-10 scale
             }
-            
+
             return {
               ...movie,
               calculatedRating,
@@ -127,12 +128,12 @@ export function MovieSearchPage() {
 
       // Filter by rating (client-side) - use calculated rating if available
       let filtered = moviesWithRatings;
-      if (activeFilters.minRating > 0) {
+      if (currentFilters.minRating > 0) {
         filtered = moviesWithRatings.filter(movie => {
           const rating = movie.calculatedRating !== null && movie.calculatedRating !== undefined
             ? movie.calculatedRating
             : movie.rating;
-          return rating >= activeFilters.minRating;
+          return rating >= currentFilters.minRating;
         });
       }
 
@@ -152,7 +153,7 @@ export function MovieSearchPage() {
   const handleSearch = async (filters: SearchFilters) => {
     setActiveFilters(filters);
     setIsSearchMode(true);
-    await loadMovies(1, true);
+    await loadMovies(1, true, filters);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -174,10 +175,10 @@ export function MovieSearchPage() {
     loadMovies(1, false);
   };
 
-  const hasActiveFilters = 
-    activeFilters.query || 
-    (activeFilters.genre && activeFilters.genre !== 'all') || 
-    (activeFilters.year && activeFilters.year !== 'all') || 
+  const hasActiveFilters =
+    activeFilters.query ||
+    (activeFilters.genre && activeFilters.genre !== 'all') ||
+    (activeFilters.year && activeFilters.year !== 'all') ||
     activeFilters.minRating > 0;
 
   return (
@@ -258,7 +259,7 @@ export function MovieSearchPage() {
                   <ChevronLeft className="w-4 h-4 mr-1" />
                   Previous
                 </Button>
-                
+
                 <div className="flex items-center gap-2">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum;
@@ -271,7 +272,7 @@ export function MovieSearchPage() {
                     } else {
                       pageNum = currentPage - 2 + i;
                     }
-                    
+
                     return (
                       <Button
                         key={pageNum}
@@ -335,4 +336,3 @@ function convertTMDBToMovie(tmdbMovie: TMDBMovie): Movie {
     releaseDate: tmdbMovie.release_date,
   };
 }
-

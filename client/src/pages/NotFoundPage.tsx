@@ -6,20 +6,20 @@ export function NotFoundPage() {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="text-center max-w-2xl">
-        {/* 404-kuva ja otsikko */}
+        {/* 404 Illustration */}
         <div className="mb-8">
           <div className="text-9xl mb-4">🎬</div>
           <h1 className="text-white text-6xl md:text-8xl mb-4">404</h1>
         </div>
 
-        {/* Virheilmoitus käyttäjälle */}
+        {/* Message */}
         <h2 className="text-white text-3xl mb-4">Page Not Found</h2>
         <p className="text-zinc-400 text-lg mb-8">
           Oops! The page you're looking for doesn't exist. It might have been moved or deleted,
           or you may have mistyped the URL.
         </p>
 
-        {/* Toimintapainikkeet (palaa etusivulle tai hae elokuvia) */}
+        {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link to="/" className="cursor-pointer">
             <Button className="bg-red-600 hover:bg-red-700 w-full sm:w-auto cursor-pointer">
@@ -38,7 +38,7 @@ export function NotFoundPage() {
           </Link>
         </div>
 
-        {/* Nopeat linkit muihin sivuihin */}
+        {/* Quick Links */}
         <div className="mt-12 pt-8 border-t border-zinc-800">
           <p className="text-zinc-500 mb-4">Quick Links</p>
           <div className="flex flex-wrap justify-center gap-4">
@@ -60,12 +60,9 @@ export function NotFoundPage() {
           </div>
         </div>
 
-        {/* Alalogo linkki etusivulle */}
+        {/* Logo */}
         <div className="mt-12">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer"
-          >
+          <Link to="/" className="inline-flex items-center gap-2 text-zinc-600 hover:text-zinc-400 transition-colors cursor-pointer">
             <Film className="w-6 h-6" />
             <span className="text-lg">Movie4you</span>
           </Link>

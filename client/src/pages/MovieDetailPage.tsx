@@ -13,7 +13,6 @@ import { RemoveFromGroupModal } from '../components/RemoveFromGroupModal';
 import { toast } from 'sonner';
 import { moviesAPI, reviewsAPI, favoritesAPI, groupsAPI } from '../services/api';
 
-// TMDB-elokuvan tietorakenne
 interface TMDBMovie {
   id: number;
   title: string;
@@ -29,7 +28,6 @@ interface TMDBMovie {
   cast?: string[];
 }
 
-// Arvion tietorakenne
 interface Review {
   id: number;
   user_id: number;
@@ -42,31 +40,18 @@ interface Review {
 }
 
 export function MovieDetailPage() {
-  // Haetaan elokuvan ID URL-parametreista
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-
-  // Elokuva ja perusdata
   const [movie, setMovie] = useState<TMDBMovie | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
-
-  // Suosikkitila
   const [isFavorite, setIsFavorite] = useState(false);
-
-  // Käyttäjän kirjoittama arvio
   const [userRating, setUserRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
-
-  // Lataus ja lähetys
   const [loading, setLoading] = useState(true);
   const [submittingReview, setSubmittingReview] = useState(false);
-
-  // Ryhmämodaalit
   const [showAddToGroupModal, setShowAddToGroupModal] = useState(false);
   const [showRemoveFromGroupModal, setShowRemoveFromGroupModal] = useState(false);
-
-  // Missä ryhmissä tämä elokuva on
   const [groupsWithMovie, setGroupsWithMovie] = useState<Array<{
     id: number;
     name: string;
@@ -74,72 +59,87 @@ export function MovieDetailPage() {
     member_count: number;
     is_member: boolean;
   }>>([]);
-
   const [isInAnyGroup, setIsInAnyGroup] = useState(false);
 
-  // Lasketaan keskiarvo käyttäjäarvioista
+  // Calculate average rating from reviews
   const calculateAverageRating = () => {
-    if (reviews.length === 0) return null;
+    if (reviews.length === 0) {
+      return null; // Return null if no reviews, will use TMDB rating
+    }
     const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
-    return (sum / reviews.length) * 2; // Muutetaan asteikko 1–5 → 1–10
+    return (sum / reviews.length) * 2; // Convert 1-5 scale to 1-10 scale
   };
 
   useEffect(() => {
     const fetchData = async () => {
       if (!id) return;
-
+      
       try {
         setLoading(true);
-
-        // Haetaan elokuvan tiedot
+        
+        // Fetch movie details
         const movieData = await moviesAPI.getDetails(Number(id));
         setMovie(movieData);
 
-        // Haetaan arvostelut
+        // Fetch reviews
         const reviewsData = await moviesAPI.getReviews(Number(id));
         setReviews(reviewsData.reviews || []);
 
-        // Tarkistetaan suosikit
+        // Check if favorite
         if (isLoggedIn) {
           try {
             const favorites = await favoritesAPI.getAll();
             const favoriteIds = favorites.map((f: any) => f.movie_id);
             setIsFavorite(favoriteIds.includes(Number(id)));
-          } catch {}
+          } catch (error) {
+            // Silently fail
+          }
 
-          // Tarkistetaan onko elokuva jo käyttäjän ryhmissä
+          // Check if movie is in any group
           try {
             const groupsData = await groupsAPI.getAll(1, 1000);
             const userGroups = groupsData.groups?.filter((g: any) => g.is_member) || [];
-
-            const withMovie: any[] = [];
+            
+            // For each group, check if movie is in it
+            const groupsWithMovieList: Array<{
+              id: number;
+              name: string;
+              description?: string;
+              member_count: number;
+              is_member: boolean;
+            }> = [];
 
             for (const group of userGroups) {
               try {
-                const details = await groupsAPI.getDetails(group.id);
-                const movieIds = details.content?.map((i: any) => i.movie_id) || [];
-
-                if (movieIds.includes(Number(id))) {
-                  withMovie.push({
-                    id: group.id,
-                    name: group.name,
-                    description: group.description,
-                    member_count: group.member_count,
-                    is_member: group.is_member,
-                  });
+                const groupDetails = await groupsAPI.getDetails(group.id);
+                if (groupDetails.content) {
+                  const movieIds = groupDetails.content.map((item: any) => item.movie_id);
+                  if (movieIds.includes(Number(id))) {
+                    groupsWithMovieList.push({
+                      id: group.id,
+                      name: group.name,
+                      description: group.description,
+                      member_count: group.member_count,
+                      is_member: group.is_member,
+                    });
+                  }
                 }
-              } catch {}
+              } catch (error) {
+                // Silently fail for individual group
+              }
             }
 
-            setGroupsWithMovie(withMovie);
-            setIsInAnyGroup(withMovie.length > 0);
-          } catch {
+            setGroupsWithMovie(groupsWithMovieList);
+            setIsInAnyGroup(groupsWithMovieList.length > 0);
+          } catch (error) {
+            // Silently fail
             setGroupsWithMovie([]);
             setIsInAnyGroup(false);
           }
         }
-      } catch {
-        toast.error('Elokuvan lataus epäonnistui');
+      } catch (error: any) {
+        console.error('Error fetching movie:', error);
+        toast.error('Failed to load movie details');
       } finally {
         setLoading(false);
       }
@@ -148,10 +148,9 @@ export function MovieDetailPage() {
     fetchData();
   }, [id, isLoggedIn]);
 
-  // Suosikiksi lisääminen / poistaminen
   const handleFavoriteClick = async () => {
     if (!isLoggedIn) {
-      toast.error('Kirjaudu sisään lisätäksesi suosikkeihin');
+      toast.error('Please login to add favorites');
       navigate('/login');
       return;
     }
@@ -160,18 +159,17 @@ export function MovieDetailPage() {
       if (isFavorite) {
         await favoritesAPI.remove(Number(id));
         setIsFavorite(false);
-        toast.success('Poistettu suosikeista');
+        toast.success('Removed from favorites');
       } else {
         await favoritesAPI.add(Number(id));
         setIsFavorite(true);
-        toast.success('Lisätty suosikkeihin');
+        toast.success('Added to favorites');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Toiminto epäonnistui');
+      toast.error(error.message || 'Failed to update favorites');
     }
   };
 
-  // Jakaminen  varakopio leikepöytään
   const handleShareClick = async () => {
     if (navigator.share && movie) {
       try {
@@ -181,64 +179,62 @@ export function MovieDetailPage() {
           url: window.location.href,
         });
       } catch (error: any) {
+        // User canceled share or share failed - ignore silently
         if (error.name !== 'AbortError') {
+          console.error('Share failed:', error);
+          // Fallback to clipboard
           try {
             await navigator.clipboard.writeText(window.location.href);
-            toast.success('Linkki kopioitu');
-          } catch {
-            toast.error('Jakaminen epäonnistui');
+            toast.success('Link copied to clipboard');
+          } catch (clipError) {
+            toast.error('Failed to share or copy link');
           }
         }
       }
     } else {
       try {
         await navigator.clipboard.writeText(window.location.href);
-        toast.success('Linkki kopioitu');
-      } catch {
-        toast.error('Kopiointi epäonnistui');
+        toast.success('Link copied to clipboard');
+      } catch (error) {
+        toast.error('Failed to copy link');
       }
     }
   };
 
-  // Arvion lähetys backendille
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!isLoggedIn) {
-      toast.error('Kirjaudu sisään jättääksesi arvion');
+      toast.error('Please login to submit a review');
       navigate('/login');
       return;
     }
-
     if (userRating === 0) {
-      toast.error('Valitse tähtimäärä');
+      toast.error('Please select a rating');
       return;
     }
-
     if (!reviewText.trim()) {
-      toast.error('Kirjoita arvio');
+      toast.error('Please enter a review text');
       return;
     }
 
     setSubmittingReview(true);
-
     try {
       await reviewsAPI.create(Number(id), userRating, reviewText);
-      toast.success('Arvio tallennettu');
-
+      toast.success('Review submitted successfully!');
       setUserRating(0);
       setReviewText('');
-
-      const reviewsData = await moviesAPI.getReviews(Number(id));
-      setReviews(reviewsData.reviews || []);
+      
+        // Refresh reviews
+        const reviewsData = await moviesAPI.getReviews(Number(id));
+        const updatedReviews = reviewsData.reviews || [];
+        setReviews(updatedReviews);
     } catch (error: any) {
-      toast.error(error.message || 'Arvion tallennus epäonnistui');
+      toast.error(error.message || 'Failed to submit review');
     } finally {
       setSubmittingReview(false);
     }
   };
 
-  // Latausnäkymä
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -247,7 +243,6 @@ export function MovieDetailPage() {
     );
   }
 
-  // Jos elokuvaa ei löydy
   if (!movie) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -261,17 +256,17 @@ export function MovieDetailPage() {
     );
   }
 
-  // Julkaisuvuosi
   const getYear = (dateString: string) => {
     return dateString ? new Date(dateString).getFullYear() : 'N/A';
   };
 
-  // Genrelista
-  const getGenres = () => movie.genres?.map(g => g.name) || [];
+  const getGenres = () => {
+    return movie.genres?.map(g => g.name) || [];
+  };
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Takaisin-nappi */}
+      {/* Back Button */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Link to="/">
           <Button variant="ghost" className="text-zinc-400 hover:text-white hover:bg-zinc-900">
@@ -281,7 +276,7 @@ export function MovieDetailPage() {
         </Link>
       </div>
 
-      {/* Hero-osa ja taustakuva */}
+      {/* Hero Section */}
       <div className="relative h-[60vh] mb-8">
         <div className="absolute inset-0">
           <ImageWithFallback
@@ -293,11 +288,9 @@ export function MovieDetailPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
         </div>
 
-        {/* Yläosan sisältö */}
         <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-end pb-12">
           <div className="flex flex-col md:flex-row gap-8 items-start md:items-end w-full">
-
-            {/* Juliste */}
+            {/* Poster */}
             <div className="w-48 md:w-64 flex-shrink-0 rounded-lg overflow-hidden shadow-2xl">
               <ImageWithFallback
                 src={movie.poster_path || ''}
@@ -306,72 +299,61 @@ export function MovieDetailPage() {
               />
             </div>
 
-            {/* Tekstit ja toiminnot */}
+            {/* Info */}
             <div className="flex-1">
               <h1 className="text-white text-4xl md:text-5xl mb-4">{movie.title}</h1>
-
-              {/* Perustiedot arvosana, vuosi, kesto */}
+              
               <div className="flex flex-wrap items-center gap-4 mb-4 text-zinc-300">
                 <div className="flex items-center gap-1">
                   <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" />
-
                   <span className="text-white text-xl">
                     {(() => {
-                      const avg = calculateAverageRating();
-                      return avg !== null ? avg.toFixed(1) : movie.vote_average.toFixed(1);
+                      const avgRating = calculateAverageRating();
+                      return avgRating !== null ? avgRating.toFixed(1) : movie.vote_average.toFixed(1);
                     })()}
                   </span>
-
                   <span className="text-zinc-400">/10</span>
-
                   {calculateAverageRating() !== null && (
-                    <span className="text-zinc-500 text-sm ml-2">
-                      ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
-                    </span>
+                    <span className="text-zinc-500 text-sm ml-2">({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})</span>
                   )}
                 </div>
-
                 <span>{getYear(movie.release_date)}</span>
-
                 {movie.runtime && (
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-5 h-5" />
+                <div className="flex items-center gap-1">
+                  <Clock className="w-5 h-5" />
                     <span>{movie.runtime} min</span>
-                  </div>
+                </div>
                 )}
               </div>
 
-              {/* Genret */}
               {getGenres().length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex flex-wrap gap-2 mb-6">
                   {getGenres().map((genre) => (
-                    <span
-                      key={genre}
-                      className="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-full"
-                    >
-                      {genre}
-                    </span>
-                  ))}
-                </div>
+                  <span
+                    key={genre}
+                    className="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-full"
+                  >
+                    {genre}
+                  </span>
+                ))}
+              </div>
               )}
 
-              {/* Toimintonapit suosikki, ryhmät, jako */}
               <div className="flex gap-3 flex-wrap">
                 {isLoggedIn && (
                   <>
-                    <Button
-                      onClick={handleFavoriteClick}
-                      variant="outline"
-                      className={`${
-                        isFavorite
-                          ? 'bg-red-600 border-red-600 text-white hover:bg-red-700'
-                          : 'bg-transparent border-zinc-700 text-white hover:bg-zinc-900'
-                      }`}
-                    >
-                      <Heart className={`w-4 h-4 mr-2 ${isFavorite && 'fill-current'}`} />
-                      {isFavorite ? 'Added' : 'Add to Favorites'}
-                    </Button>
-
+                  <Button
+                    onClick={handleFavoriteClick}
+                    variant="outline"
+                    className={`${
+                      isFavorite
+                        ? 'bg-red-600 border-red-600 text-white hover:bg-red-700'
+                        : 'bg-transparent border-zinc-700 text-white hover:bg-zinc-900'
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 mr-2 ${isFavorite && 'fill-current'}`} />
+                    {isFavorite ? 'Added' : 'Add to Favorites'}
+                  </Button>
                     {isInAnyGroup ? (
                       <Button
                         onClick={() => setShowRemoveFromGroupModal(true)}
@@ -393,7 +375,6 @@ export function MovieDetailPage() {
                     )}
                   </>
                 )}
-
                 <Button
                   onClick={handleShareClick}
                   variant="outline"
@@ -408,30 +389,26 @@ export function MovieDetailPage() {
         </div>
       </div>
 
-      {/* Pääsisältö */}
+      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* Vasemman puolen tekstit */}
+          {/* Left Column - Details */}
           <div className="lg:col-span-2 space-y-8">
-
-            {/* Leffan kuvaus */}
+            {/* Overview */}
             <section>
               <h2 className="text-white text-2xl mb-4">Overview</h2>
-              <p className="text-zinc-300 leading-relaxed text-lg">
-                {movie.overview || 'No overview available.'}
-              </p>
+              <p className="text-zinc-300 leading-relaxed text-lg">{movie.overview || 'No overview available.'}</p>
             </section>
 
-            {/* Arvostelut */}
+            {/* Reviews */}
             <section>
               <h2 className="text-white text-2xl mb-6">Reviews ({reviews.length})</h2>
-
-              {/* Arvion lähetyslomake */}
+              
+              {/* Submit Review Form */}
               {isLoggedIn && (
                 <form onSubmit={handleSubmitReview} className="bg-zinc-900 rounded-lg p-6 mb-6">
                   <h3 className="text-white text-xl mb-4">Write a Review</h3>
-
+                  
                   <div className="space-y-4">
                     <div>
                       <Label className="text-zinc-300 mb-2 block">Your Rating</Label>
@@ -457,22 +434,18 @@ export function MovieDetailPage() {
                       />
                     </div>
 
-                    <Button
-                      type="submit"
-                      className="bg-red-600 hover:bg-red-700"
-                      disabled={submittingReview}
-                    >
+                    <Button type="submit" className="bg-red-600 hover:bg-red-700" disabled={submittingReview}>
                       {submittingReview ? 'Submitting...' : 'Submit Review'}
                     </Button>
                   </div>
                 </form>
               )}
 
-              {/* Arvostelulista */}
+              {/* Reviews List */}
               <div className="space-y-4">
                 {reviews.map((review) => (
-                  <ReviewCard
-                    key={review.id}
+                  <ReviewCard 
+                    key={review.id} 
                     review={{
                       id: review.id,
                       movieId: review.movie_id,
@@ -481,10 +454,9 @@ export function MovieDetailPage() {
                       text: review.text,
                       date: review.created_at,
                       avatar: '',
-                    }}
+                    }} 
                   />
                 ))}
-
                 {reviews.length === 0 && (
                   <div className="text-center py-12 bg-zinc-900 rounded-lg">
                     <p className="text-zinc-400">No reviews yet. Be the first to review!</p>
@@ -494,11 +466,11 @@ export function MovieDetailPage() {
             </section>
           </div>
 
-          {/* Oikea sivupalkki */}
+          {/* Right Column - Details Sidebar */}
           <div className="space-y-6">
             <div className="bg-zinc-900 rounded-lg p-6 space-y-4 sticky top-24">
               <h3 className="text-white text-xl mb-4">Movie Info</h3>
-
+              
               {movie.release_date && (
                 <div className="flex items-center gap-3">
                   <Calendar className="w-5 h-5 text-zinc-400" />
@@ -508,7 +480,7 @@ export function MovieDetailPage() {
                       {new Date(movie.release_date).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
-                        day: 'numeric',
+                        day: 'numeric'
                       })}
                     </div>
                   </div>
@@ -516,10 +488,10 @@ export function MovieDetailPage() {
               )}
 
               {movie.runtime && (
-                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-zinc-400" />
-                  <div>
-                    <div className="text-zinc-400 text-sm">Runtime</div>
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-zinc-400" />
+                <div>
+                  <div className="text-zinc-400 text-sm">Runtime</div>
                     <div className="text-white">{movie.runtime} minutes</div>
                   </div>
                 </div>
@@ -531,13 +503,12 @@ export function MovieDetailPage() {
                   <div className="text-zinc-400 text-sm">Rating</div>
                   <div className="text-white">
                     {(() => {
-                      const avg = calculateAverageRating();
-                      return avg !== null ? avg.toFixed(1) : movie.vote_average.toFixed(1);
+                      const avgRating = calculateAverageRating();
+                      return avgRating !== null ? avgRating.toFixed(1) : movie.vote_average.toFixed(1);
                     })()} / 10.0
                   </div>
-
                   <div className="text-zinc-500 text-xs">
-                    {calculateAverageRating() !== null
+                    {calculateAverageRating() !== null 
                       ? `(${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'})`
                       : `(${movie.vote_count} TMDB votes)`
                     }
@@ -549,41 +520,52 @@ export function MovieDetailPage() {
         </div>
       </div>
 
-      {/* Ryhmämodaalit */}
+      {/* Add to Group Modal */}
       {movie && (
         <>
           <AddToGroupModal
             open={showAddToGroupModal}
             onClose={() => {
               setShowAddToGroupModal(false);
-              // Päivitetään ryhmät
+              // Refresh groups after adding
               if (isLoggedIn && id) {
                 const refreshGroups = async () => {
                   try {
                     const groupsData = await groupsAPI.getAll(1, 1000);
                     const userGroups = groupsData.groups?.filter((g: any) => g.is_member) || [];
-
-                    const list: any[] = [];
+                    const groupsWithMovieList: Array<{
+                      id: number;
+                      name: string;
+                      description?: string;
+                      member_count: number;
+                      is_member: boolean;
+                    }> = [];
 
                     for (const group of userGroups) {
                       try {
-                        const details = await groupsAPI.getDetails(group.id);
-                        const movieIds = details.content?.map((i: any) => i.movie_id) || [];
-                        if (movieIds.includes(Number(id))) {
-                          list.push({
-                            id: group.id,
-                            name: group.name,
-                            description: group.description,
-                            member_count: group.member_count,
-                            is_member: group.is_member,
-                          });
+                        const groupDetails = await groupsAPI.getDetails(group.id);
+                        if (groupDetails.content) {
+                          const movieIds = groupDetails.content.map((item: any) => item.movie_id);
+                          if (movieIds.includes(Number(id))) {
+                            groupsWithMovieList.push({
+                              id: group.id,
+                              name: group.name,
+                              description: group.description,
+                              member_count: group.member_count,
+                              is_member: group.is_member,
+                            });
+                          }
                         }
-                      } catch {}
+                      } catch (error) {
+                        // Silently fail
+                      }
                     }
 
-                    setGroupsWithMovie(list);
-                    setIsInAnyGroup(list.length > 0);
-                  } catch {}
+                    setGroupsWithMovie(groupsWithMovieList);
+                    setIsInAnyGroup(groupsWithMovieList.length > 0);
+                  } catch (error) {
+                    // Silently fail
+                  }
                 };
                 refreshGroups();
               }
@@ -591,39 +573,49 @@ export function MovieDetailPage() {
             movieId={movie.id}
             movieTitle={movie.title}
           />
-
           <RemoveFromGroupModal
             open={showRemoveFromGroupModal}
             onClose={() => {
               setShowRemoveFromGroupModal(false);
-              // Päivitetään ryhmät
+              // Refresh groups after removing
               if (isLoggedIn && id) {
                 const refreshGroups = async () => {
                   try {
                     const groupsData = await groupsAPI.getAll(1, 1000);
                     const userGroups = groupsData.groups?.filter((g: any) => g.is_member) || [];
-
-                    const list: any[] = [];
+                    const groupsWithMovieList: Array<{
+                      id: number;
+                      name: string;
+                      description?: string;
+                      member_count: number;
+                      is_member: boolean;
+                    }> = [];
 
                     for (const group of userGroups) {
                       try {
-                        const details = await groupsAPI.getDetails(group.id);
-                        const movieIds = details.content?.map((i: any) => i.movie_id) || [];
-                        if (movieIds.includes(Number(id))) {
-                          list.push({
-                            id: group.id,
-                            name: group.name,
-                            description: group.description,
-                            member_count: group.member_count,
-                            is_member: group.is_member,
-                          });
+                        const groupDetails = await groupsAPI.getDetails(group.id);
+                        if (groupDetails.content) {
+                          const movieIds = groupDetails.content.map((item: any) => item.movie_id);
+                          if (movieIds.includes(Number(id))) {
+                            groupsWithMovieList.push({
+                              id: group.id,
+                              name: group.name,
+                              description: group.description,
+                              member_count: group.member_count,
+                              is_member: group.is_member,
+                            });
+                          }
                         }
-                      } catch {}
+                      } catch (error) {
+                        // Silently fail
+                      }
                     }
 
-                    setGroupsWithMovie(list);
-                    setIsInAnyGroup(list.length > 0);
-                  } catch {}
+                    setGroupsWithMovie(groupsWithMovieList);
+                    setIsInAnyGroup(groupsWithMovieList.length > 0);
+                  } catch (error) {
+                    // Silently fail
+                  }
                 };
                 refreshGroups();
               }

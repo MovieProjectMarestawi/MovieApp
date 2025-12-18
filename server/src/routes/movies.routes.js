@@ -11,25 +11,54 @@ import { getMovieReviews } from '../controllers/reviews.controller.js';
 
 const router = express.Router();
 
-// Hae elokuvia hakusanoilla / genrellä / vuodella
+/**
+ * @route   GET /api/movies/search
+ * @desc    Search movies by query, genre, or year
+ * @access  Public
+ */
 router.get('/search', searchMovies);
 
-// Suosituimmat elokuvat
+/**
+ * @route   GET /api/movies/popular
+ * @desc    Get popular movies
+ * @access  Public
+ */
 router.get('/popular', getPopularMovies);
 
-// Discover — listaa elokuvia suodattimilla tai ilman
+/**
+ * @route   GET /api/movies/discover
+ * @desc    Discover movies (all movies with optional filters)
+ * @access  Public
+ */
 router.get('/discover', discoverMovies);
 
-// Nyt teattereissa
+/**
+ * @route   GET /api/movies/now-playing
+ * @desc    Get now playing movies
+ * @access  Public
+ */
 router.get('/now-playing', getNowPlaying);
 
-// Hae kaikki elokuvagenret
+/**
+ * @route   GET /api/movies/genres
+ * @desc    Get movie genres
+ * @access  Public
+ */
 router.get('/genres', getGenres);
 
-// Yksittäisen elokuvan tiedot
+/**
+ * @route   GET /api/movies/:id
+ * @desc    Get movie details
+ * @access  Public
+ */
 router.get('/:id', getMovieDetails);
 
-// Elokuvan arvioinnit
+/**
+ * @route   GET /api/movies/:id/reviews
+ * @desc    Get reviews for a movie
+ * @access  Public
+ */
 router.get('/:id/reviews', getMovieReviews);
 
 export default router;
+

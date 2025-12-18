@@ -43,7 +43,6 @@ export function NowInCinemasPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        {/* Ladataan elokuvia pienellä viiveellä */}
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
@@ -52,7 +51,7 @@ export function NowInCinemasPage() {
   return (
     <div className="min-h-screen bg-black py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Sivun otsikko ja pienet lisätiedot */}
+        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <Film className="w-10 h-10 text-red-600" />
@@ -63,11 +62,11 @@ export function NowInCinemasPage() {
           </p>
           <div className="flex items-center gap-2 mt-2 text-zinc-500">
             <MapPin className="w-4 h-4" />
-            <span className="text-sm">Available in cinemas across Finland</span>
+            <span className="text-sm">Available at Finnkino, Cinamon, and local theaters</span>
           </div>
         </div>
 
-        {/* Tilastot  määrä sijainnit ja uudet elokuvat */}
+        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
           <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
             <div className="text-3xl text-white mb-2">{cinemasMovies.length}</div>
@@ -83,7 +82,7 @@ export function NowInCinemasPage() {
           </div>
         </div>
 
-        {/* Viikon suositeltu elokuva */}
+        {/* Featured This Week */}
         {cinemasMovies.length > 0 && (
           <section className="mb-12">
             <h2 className="text-white text-2xl mb-6">Featured This Week</h2>
@@ -115,15 +114,13 @@ export function NowInCinemasPage() {
                       New Release
                     </span>
                   </div>
-
                   <p className="text-zinc-300 mb-4 line-clamp-3">
                     {cinemasMovies[0].description}
                   </p>
-
                   <div className="flex flex-wrap gap-4 text-zinc-400 text-sm">
-                    <span>{cinemasMovies[0].rating.toFixed(1)}/10</span>
-                    {cinemasMovies[0].duration > 0 && <span>{cinemasMovies[0].duration} min</span>}
-                    <span>{cinemasMovies[0].year}</span>
+                    <span>⭐ {cinemasMovies[0].rating.toFixed(1)}/10</span>
+                    {cinemasMovies[0].duration > 0 && <span>🕐 {cinemasMovies[0].duration} min</span>}
+                    <span>📅 {cinemasMovies[0].year}</span>
                   </div>
                 </div>
               </div>
@@ -131,7 +128,7 @@ export function NowInCinemasPage() {
           </section>
         )}
 
-        {/* Kaikki elokuvat jotka ovat nyt teattereissa */}
+        {/* All Movies */}
         <section>
           <h2 className="text-white text-2xl mb-6">All Movies in Cinemas</h2>
           {cinemasMovies.length > 0 ? (
@@ -142,15 +139,14 @@ export function NowInCinemasPage() {
             </div>
           ) : (
             <div className="text-center py-20 bg-zinc-900 rounded-lg">
-              {/* Ei tällä hetkellä elokuvia teattereissa */}
-              <div className="text-6xl mb-4"></div>
+              <div className="text-6xl mb-4">🎬</div>
               <h3 className="text-white text-2xl mb-2">No movies currently in cinemas</h3>
               <p className="text-zinc-400">Check back soon for new releases!</p>
             </div>
           )}
         </section>
 
-        {/* Info osio teatteriketjuista */}
+        {/* Info Section */}
         <section className="mt-16 bg-gradient-to-r from-red-950 to-zinc-950 rounded-lg p-8">
           <h2 className="text-white text-2xl mb-4">Where to Watch</h2>
           <p className="text-zinc-300 mb-6">
@@ -176,7 +172,7 @@ export function NowInCinemasPage() {
   );
 }
 
-// TMDB Movie tyyppimuunnos
+// Helper function to convert TMDb movie to our Movie type
 function convertTMDBToMovie(tmdbMovie: TMDBMovie): Movie {
   return {
     id: tmdbMovie.id,

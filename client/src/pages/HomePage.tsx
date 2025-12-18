@@ -421,4 +421,3 @@ function convertTMDBToMovie(tmdbMovie: TMDBMovie) {
     releaseDate: tmdbMovie.release_date,
   };
 }
-

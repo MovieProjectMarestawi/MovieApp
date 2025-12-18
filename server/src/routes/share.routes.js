@@ -3,7 +3,12 @@ import { getShareableFavorites } from '../controllers/share.controller.js';
 
 const router = express.Router();
 
-// Hae käyttäjän jaettavat suosikit (julkinen linkki)
+/**
+ * @route   GET /api/favorites/share/:userId
+ * @desc    Get shareable favorites for a user
+ * @access  Public
+ */
 router.get('/share/:userId', getShareableFavorites);
 
 export default router;
+

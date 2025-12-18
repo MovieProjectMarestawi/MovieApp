@@ -50,4 +50,3 @@ export interface GroupJoinRequest {
   groupName: string;
   status: 'pending' | 'approved' | 'rejected';
 }
-

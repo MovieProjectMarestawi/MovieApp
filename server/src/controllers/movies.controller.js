@@ -1,8 +1,6 @@
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = process.env.TMDB_BASE_URL || 'https://api.themoviedb.org/3';
 
-
-
 /**
  * Search movies
  * GET /api/movies/search
@@ -32,7 +30,7 @@ export const searchMovies = async (req, res, next) => {
       // Discover movies by genre/year
       url = `${TMDB_BASE_URL}/discover/movie?${params.toString()}`;
       if (genre) params.append('with_genres', genre);
-      if (year) params.append('year', year);
+      if (year) params.append('primary_release_year', year);
       url = `${TMDB_BASE_URL}/discover/movie?${params.toString()}`;
     }
 
@@ -141,7 +139,7 @@ export const discoverMovies = async (req, res, next) => {
     }
 
     if (year) {
-      params.append('year', year);
+      params.append('primary_release_year', year);
     }
 
     const url = `${TMDB_BASE_URL}/discover/movie?${params.toString()}`;

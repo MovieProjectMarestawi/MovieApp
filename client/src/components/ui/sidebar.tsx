@@ -22,7 +22,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger, 
+  TooltipTrigger,
 } from "./tooltip";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";

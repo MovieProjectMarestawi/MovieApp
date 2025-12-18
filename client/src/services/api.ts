@@ -1,5 +1,5 @@
 // Use relative path in production (Docker), absolute URL in development
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
+const API_BASE_URL = import.meta.env.VITE_API_URL ||
   (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api');
 
 // Helper function to get token from localStorage
@@ -188,7 +188,7 @@ export const moviesAPI = {
     params.append('sort_by', sortBy);
     if (genre) params.append('genre', genre.toString());
     if (year) params.append('year', year.toString());
-    
+
     const response = await api.get(`/movies/discover?${params.toString()}`);
     return response.data;
   },

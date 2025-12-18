@@ -17,7 +17,7 @@ export function FavoritesPage() {
   const [loading, setLoading] = useState(true);
   const [viewingUser, setViewingUser] = useState<{ id: number; email: string } | null>(null);
 
-  // Tarkistetaan katsotaanko toisen käyttäjän jakamat suosikit
+  // If viewing someone else's shared favorites
   const isSharedView = !!sharedUserId;
 
   useEffect(() => {
@@ -28,13 +28,13 @@ export function FavoritesPage() {
         let userData: any = null;
 
         if (isSharedView) {
-          // Haetaan toisen käyttäjän jakamat suosikit backendistä
+          // Fetch shared favorites
           const sharedData = await favoritesAPI.getShareable(Number(sharedUserId));
           favorites = sharedData.favorites || [];
           userData = sharedData.user;
           setViewingUser(userData);
         } else {
-          // Haetaan oma suosikkilista, jos käyttäjä on kirjautunut
+          // Fetch user's own favorites
           if (!isLoggedIn) {
             setLoading(false);
             return;
@@ -42,13 +42,13 @@ export function FavoritesPage() {
           favorites = await favoritesAPI.getAll();
         }
 
-        // Haetaan jokaisen elokuvan tarkemmat tiedot TMDB:stä
+        // Fetch movie details for each favorite
         const moviePromises = favorites.map(async (fav: any) => {
           try {
             const movieData = await moviesAPI.getDetails(fav.movie_id);
             return convertTMDBToMovie(movieData);
           } catch (error) {
-            console.error(`Elokuvan haku epäonnistui ID: ${fav.movie_id}`);
+            console.error(`Failed to fetch movie ${fav.movie_id}:`, error);
             return null;
           }
         });
@@ -56,8 +56,8 @@ export function FavoritesPage() {
         const movies = (await Promise.all(moviePromises)).filter((m): m is Movie => m !== null);
         setFavoriteMovies(movies);
       } catch (error: any) {
-        console.error('Suosikkien hakeminen epäonnistui');
-        toast.error('Suosikkien lataaminen epäonnistui');
+        console.error('Error fetching favorites:', error);
+        toast.error('Failed to load favorites');
       } finally {
         setLoading(false);
       }
@@ -66,32 +66,30 @@ export function FavoritesPage() {
     fetchFavorites();
   }, [isLoggedIn, sharedUserId, isSharedView]);
 
-  // Odotetaan, kunnes kirjautumistiedot ovat valmiit
+  // Wait for auth to finish loading before checking login status
   if (authLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Ladataan...</div>
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
 
-  // Jos ei ole kirjautunut eikä katsota jaettua listaa  ohjataan login-sivulle
   if (!isLoggedIn && !isSharedView) {
     return <Navigate to="/login" />;
   }
 
-  // Näytetään latausruutu datan hakemisen ajan
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Ladataan...</div>
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
 
   const viewingUsername = isSharedView ? (viewingUser?.email || 'User') : (user?.email || 'User');
 
-  // Järjestetään elokuvat valitun tavan mukaan (nimi, arvosana, vuosi)
+  // Sort movies
   const sortedMovies = [...favoriteMovies].sort((a, b) => {
     switch (sortBy) {
       case 'title':
@@ -108,57 +106,50 @@ export function FavoritesPage() {
   const handleShare = async () => {
     const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
     const shareUrl = `${baseUrl}/favorites?user=${user?.id || '1'}`;
-
     if (navigator.share) {
       try {
-        // Käyttää mobiilin share ikkunaa, jos saatavilla
         await navigator.share({
-          title: `${viewingUsername} suosikkielokuvat`,
-          text: 'Katso suosikkilistani!',
+          title: `${viewingUsername}'s Favorite Movies`,
+          text: 'Check out my favorite movies!',
           url: shareUrl,
         });
       } catch (error: any) {
+        // User canceled share or share failed - ignore silently
         if (error.name !== 'AbortError') {
-          console.error('Jakaminen epäonnistui');
+          console.error('Share failed:', error);
         }
       }
     } else {
-      // Kopioidaan linkki leikepöydälle jos selaimessa ei ole share API:a
       try {
         await navigator.clipboard.writeText(shareUrl);
-        toast.success('Linkki kopioitu!');
+        toast.success('Shareable link copied to clipboard!');
       } catch (error) {
-        toast.error('Linkin kopiointi epäonnistui');
+        toast.error('Failed to copy link');
       }
     }
   };
 
   const handleExport = () => {
-    // Muodostetaan JSON-tiedosto elokuvista ja ladataan se käyttäjälle
     const data = favoriteMovies.map((m) => ({
       title: m.title,
       year: m.year,
       rating: m.rating,
       genre: m.genre.join(', '),
     }));
-
     const json = JSON.stringify(data, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement('a');
     a.href = url;
     a.download = 'my-favorite-movies.json';
     a.click();
-
-    toast.success('Suosikit viety onnistuneesti!');
+    toast.success('Favorites exported successfully!');
   };
 
   return (
     <div className="min-h-screen bg-black py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Sivun yläotsikko ja kuvaus */}
+        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <Heart className="w-10 h-10 text-red-600" />
@@ -166,24 +157,23 @@ export function FavoritesPage() {
               {isSharedView ? `${viewingUsername}'s Favorites` : 'My Favorites'}
             </h1>
           </div>
-
           <p className="text-zinc-400 text-lg">
             {isSharedView
-              ? `Näet käyttäjän ${viewingUsername} suosikkielokuvat`
-              : 'Tässä ovat omat suosikkielokuvasi'}
+              ? `Explore ${viewingUsername}'s collection of favorite movies`
+              : 'Your personal collection of favorite movies'}
           </p>
         </div>
 
-        {/* Ilmoitus jaetusta näkymästä */}
+        {/* Shared View Banner */}
         {isSharedView && (
           <div className="mb-6 bg-zinc-900 border border-zinc-800 rounded-lg p-4">
             <p className="text-zinc-300">
-              Näet nyt jaetun suosikkilistan käyttäjältä <span className="text-white">{viewingUsername}</span>
+              📺 You're viewing a shared favorites list from <span className="text-white">{viewingUsername}</span>
             </p>
           </div>
         )}
 
-        {/* Yläpalkki järjestys jako ja export */}
+        {/* Actions Bar */}
         <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-zinc-400">Sort by:</span>
@@ -208,7 +198,6 @@ export function FavoritesPage() {
                 <Share2 className="w-4 h-4 mr-2" />
                 Share List
               </Button>
-
               <Button
                 onClick={handleExport}
                 variant="outline"
@@ -221,33 +210,25 @@ export function FavoritesPage() {
           )}
         </div>
 
-        {/* Tilastot käyttäjän suosikeista */}
+        {/* Stats */}
         {favoriteMovies.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-
-            {/* Elokuvien kokonaismäärä */}
             <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
               <div className="text-3xl text-white mb-2">{favoriteMovies.length}</div>
               <div className="text-zinc-400">Total Movies</div>
             </div>
-
-            {/* Arvosanojen keskiarvo */}
             <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
               <div className="text-3xl text-white mb-2">
                 {(favoriteMovies.reduce((sum, m) => sum + m.rating, 0) / favoriteMovies.length).toFixed(1)}
               </div>
               <div className="text-zinc-400">Avg Rating</div>
             </div>
-
-            {/* Kokonaistoistoaika tunneissa */}
             <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
               <div className="text-3xl text-white mb-2">
                 {Math.round(favoriteMovies.reduce((sum, m) => sum + m.duration, 0) / 60)}h
               </div>
               <div className="text-zinc-400">Total Runtime</div>
             </div>
-
-            {/* Genrejen lukumäärä */}
             <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
               <div className="text-3xl text-white mb-2">
                 {new Set(favoriteMovies.flatMap((m) => m.genre)).size}
@@ -257,7 +238,7 @@ export function FavoritesPage() {
           </div>
         )}
 
-        {/* Elokuvat ruudukossa */}
+        {/* Movies Grid */}
         {sortedMovies.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {sortedMovies.map((movie) => (
@@ -274,17 +255,18 @@ export function FavoritesPage() {
           </div>
         )}
 
-        {/* Genrejen jakauma */}
+        {/* Genre Breakdown */}
         {favoriteMovies.length > 0 && (
           <section className="mt-16">
             <h2 className="text-white text-2xl mb-6">Genre Breakdown</h2>
-
             <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
               <div className="flex flex-wrap gap-3">
-
-                {Array.from(new Set(favoriteMovies.flatMap((m) => m.genre))).map((genre) => {
-                  const count = favoriteMovies.filter((m) => m.genre.includes(genre)).length;
-
+                {Array.from(
+                  new Set(favoriteMovies.flatMap((m) => m.genre))
+                ).map((genre) => {
+                  const count = favoriteMovies.filter((m) =>
+                    m.genre.includes(genre)
+                  ).length;
                   return (
                     <div
                       key={genre}
@@ -295,18 +277,16 @@ export function FavoritesPage() {
                     </div>
                   );
                 })}
-
               </div>
             </div>
           </section>
         )}
-
       </div>
     </div>
   );
 }
 
-// Muuntaa TMDB elokuvatiedot Movie tyyppiin
+// Helper function to convert TMDb movie to our Movie type
 function convertTMDBToMovie(tmdbMovie: any): Movie {
   return {
     id: tmdbMovie.id,

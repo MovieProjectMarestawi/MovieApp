@@ -91,4 +91,3 @@ export function Navbar() {
     </nav>
   );
 }
-
